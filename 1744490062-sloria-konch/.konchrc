@@ -1,0 +1,22 @@
+# vi: set ft=python :
+from pathlib import Path
+
+import bpython
+import IPython
+import ptpython
+
+import konch
+
+konch.config(
+    {
+        "context": [konch, Path, IPython, bpython, ptpython],
+        "prompt": "[konch] >>> ",
+        "ipy_colors": "linux",
+        "ipy_autoreload": True,
+        "ptpy_vi_mode": True,
+        "context_format": "full",
+    }
+)
+
+if Path(".konchrc.local").exists():
+    konch.use_file(".konchrc.local", trust=True)
