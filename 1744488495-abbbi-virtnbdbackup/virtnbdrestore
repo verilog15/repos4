@@ -1,0 +1,290 @@
+#!/usr/bin/python3
+"""
+Copyright (C) 2023 Michael Ablassmeier <abi@grinser.de>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+import os
+import io
+import sys
+import logging
+import argparse
+from typing import List
+from libvirtnbdbackup import argopt
+from libvirtnbdbackup import __version__
+from libvirtnbdbackup import virt
+from libvirtnbdbackup.restore import vmconfig
+from libvirtnbdbackup.restore import files
+from libvirtnbdbackup.restore import sequence
+from libvirtnbdbackup.restore import disk
+from libvirtnbdbackup import output
+from libvirtnbdbackup import common as lib
+from libvirtnbdbackup.logcount import logCount
+from libvirtnbdbackup.sparsestream import streamer
+from libvirtnbdbackup.sparsestream import types
+from libvirtnbdbackup.ssh import Mode
+from libvirtnbdbackup.virt.exceptions import connectionFailed
+from libvirtnbdbackup.exceptions import RestoreError
+
+
+def main() -> None:
+    """main function"""
+    defaultConfig = "vmconfig.xml"
+    parser = argparse.ArgumentParser(
+        description="Restore virtual machine disks",
+        epilog=(
+            "Examples:\n"
+            "   # Dump backup metadata:\n"
+            "\t%(prog)s -i /backup/ -o dump\n"
+            "   # Verify checksums for existing data files in backup:\n"
+            "\t%(prog)s -i /backup/ -o verify\n"
+            "   # Complete restore with all disks:\n"
+            "\t%(prog)s -i /backup/ -o /target\n"
+            "   # Complete restore, adjust config and redefine vm after restore:\n"
+            "\t%(prog)s -cD -i /backup/ -o /target\n"
+            "   # Complete restore, adjust config and redefine vm with name 'foo':\n"
+            "\t%(prog)s -cD --name foo -i /backup/ -o /target\n"
+            "   # Restore only disk 'vda':\n"
+            "\t%(prog)s -i /backup/ -o /target -d vda\n"
+            "   # Point in time restore:\n"
+            "\t%(prog)s -i /backup/ -o /target --until virtnbdbackup.2\n"
+            "   # Restore and process specific file sequence:\n"
+            "\t%(prog)s -i /backup/ -o /target "
+            "--sequence vdb.full.data,vdb.inc.virtnbdbackup.1.data\n"
+            "   # Restore to remote system:\n"
+            "\t%(prog)s -U qemu+ssh://root@remotehost/system"
+            " --ssh-user root -i /backup/ -o /remote_target"
+        ),
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    opt = parser.add_argument_group("General options")
+    opt.add_argument(
+        "-a",
+        "--action",
+        required=False,
+        type=str,
+        choices=["dump", "restore", "verify"],
+        default="restore",
+        help="Action to perform: (default: %(default)s)",
+    )
+    opt.add_argument(
+        "-i",
+        "--input",
+        required=True,
+        type=str,
+        help="Directory including a backup set",
+    )
+    opt.add_argument(
+        "-o", "--output", required=True, type=str, help="Restore target directory"
+    )
+    opt.add_argument(
+        "-u",
+        "--until",
+        required=False,
+        type=str,
+        help="Restore only until checkpoint, point in time restore.",
+    )
+    opt.add_argument(
+        "-s",
+        "--sequence",
+        required=False,
+        type=str,
+        default=None,
+        help="Restore image based on specified backup files.",
+    )
+    opt.add_argument(
+        "-d",
+        "--disk",
+        required=False,
+        type=str,
+        default=None,
+        help="Process only disk matching target dev name. (default: %(default)s)",
+    )
+    opt.add_argument(
+        "-n",
+        "--noprogress",
+        required=False,
+        action="store_true",
+        default=False,
+        help="Disable progress bar",
+    )
+    opt.add_argument(
+        "-f",
+        "--socketfile",
+        default=f"/var/tmp/virtnbdbackup.{os.getpid()}",
+        type=str,
+        help="Use specified file for NBD Server socket (default: %(default)s)",
+    )
+    opt.add_argument(
+        "-r",
+        "--raw",
+        default=False,
+        action="store_true",
+        help="Copy raw images as is during restore. (default: %(default)s)",
+    )
+    opt.add_argument(
+        "-c",
+        "--adjust-config",
+        default=False,
+        action="store_true",
+        help="Adjust vm configuration during restore. (default: %(default)s)",
+    )
+    opt.add_argument(
+        "-D",
+        "--define",
+        default=False,
+        action="store_true",
+        help="Register/define VM after restore. (default: %(default)s)",
+    )
+    opt.add_argument(
+        "-C",
+        "--config-file",
+        default=defaultConfig,
+        type=str,
+        help=f"Name of the vm config file used for restore. (default: {defaultConfig})",
+    )
+    opt.add_argument(
+        "-N",
+        "--name",
+        default=None,
+        type=str,
+        help="Define restored domain with specified name",
+    )
+    opt.add_argument(
+        "-B",
+        "--buffsize",
+        default=io.DEFAULT_BUFFER_SIZE,
+        type=int,
+        help="Buffer size to use during verify (default: %(default)s)",
+    )
+    opt.add_argument(
+        "-A",
+        "--preallocate",
+        default=False,
+        action="store_true",
+        help="Preallocate restored qcow images. (default: %(default)s)",
+    )
+
+    remopt = parser.add_argument_group("Remote Restore options")
+    argopt.addRemoteArgs(remopt)
+    logopt = parser.add_argument_group("Logging options")
+    argopt.addLogArgs(logopt, parser.prog)
+    argopt.addLogColorArgs(logopt)
+    debopt = parser.add_argument_group("Debug options")
+    argopt.addDebugArgs(debopt)
+
+    args = lib.argparse(parser)
+    args.quiet = False
+    args.sshClient = None
+    # default values for common usage of lib.getDomainDisks
+    args.exclude = None
+    args.include = args.disk
+    lib.setThreadName()
+    stream = streamer.SparseStream(types)
+    fileLog = lib.getLogFile(args.logfile) or sys.exit(1)
+    counter = logCount()  # pylint: disable=unreachable
+    lib.configLogger(args, fileLog, counter)
+    lib.printVersion(__version__)
+
+    if not lib.exists(args, args.input):
+        logging.error("Backup source [%s] does not exist.", args.input)
+        sys.exit(1)
+
+    dataFiles: List[str] = []
+    if args.sequence is not None:
+        logging.info("Using manual specified sequence of files.")
+        logging.info("Disabling redefine and config adjust options.")
+        args.define = False
+        args.adjust_config = False
+        dataFiles = args.sequence.split(",")
+
+        if "full" not in dataFiles[0] and "copy" not in dataFiles[0]:
+            logging.error("Sequence must start with full or copy backup.")
+            sys.exit(1)
+    else:
+        dataFiles = lib.getLatest(args.input, "*.data")
+        if not dataFiles:
+            logging.error("No data files found in directory: [%s]", args.input)
+            sys.exit(1)
+
+    if args.action == "dump" or args.output == "dump":
+        files.dump(args, stream, dataFiles)
+        sys.exit(0)
+
+    if args.action == "verify" or args.output == "verify":
+        if not files.verify(args, dataFiles):
+            sys.exit(1)
+        sys.exit(0)
+
+    if args.action == "restore":
+        if args.define is True:
+            args.adjust_config = True
+
+        try:
+            virtClient = virt.client(args)
+        except connectionFailed as e:
+            logging.error("Unable to connect libvirt: [%s]", e)
+            sys.exit(1)
+
+        if virtClient.remoteHost:
+            if not args.output.startswith("/"):
+                logging.error(
+                    "Absolute target path required for restore to remote system"
+                )
+                sys.exit(1)
+
+            args.sshClient = lib.sshSession(
+                args, virtClient.remoteHost, mode=Mode.UPLOAD
+            )
+            if not args.sshClient:
+                logging.error("Remote restore detected but ssh session setup failed")
+                sys.exit(1)
+            if not args.sshClient.exists(args.output):
+                logging.info("Create target directory: [%s]", args.output)
+                args.sshClient.sftp.mkdir(args.output)
+        else:
+            output.target.Directory().create(args.output)
+
+        ConfigFiles = lib.getLatest(args.input, "vmconfig*.xml", -1)
+        if not ConfigFiles:
+            logging.error("No domain config file found")
+            sys.exit(1)
+
+        ConfigFile = ConfigFiles[0]
+        logging.info("Using latest config file: [%s]", ConfigFile)
+
+        autoStart = False
+        if lib.getLatest(args.input, "autostart.*", -1):
+            autoStart = True
+
+        restConfig: bytes = b""
+        try:
+            if args.sequence is not None:
+                sequence.restore(args, dataFiles, virtClient)
+            else:
+                restConfig = disk.restore(args, ConfigFile, virtClient)
+        except RestoreError as errmsg:
+            logging.error("Disk restore failed: [%s]", errmsg)
+            sys.exit(1)
+
+        files.restore(args, ConfigFile, virtClient)
+        vmconfig.restore(args, ConfigFile, restConfig, args.config_file)
+        virtClient.refreshPool(args.output)
+        if args.define is True:
+            if not virtClient.defineDomain(restConfig, autoStart):
+                sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

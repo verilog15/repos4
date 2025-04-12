@@ -1,0 +1,247 @@
+#!/usr/bin/python3
+"""
+Copyright (C) 2023  Michael Ablassmeier <abi@grinser.de>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+import os
+import sys
+import tempfile
+import signal
+import time
+import argparse
+import logging
+from functools import partial
+from libvirtnbdbackup import argopt
+from libvirtnbdbackup import __version__
+from libvirtnbdbackup import sighandle
+from libvirtnbdbackup.map import changes
+from libvirtnbdbackup.map import ranges
+from libvirtnbdbackup.map import requirements
+from libvirtnbdbackup.qemu import util as qemu
+from libvirtnbdbackup.qemu.exceptions import ProcessError, QemuHelperError
+from libvirtnbdbackup.exceptions import RestoreError
+from libvirtnbdbackup.output.exceptions import OutputException
+from libvirtnbdbackup import common as lib
+from libvirtnbdbackup.logcount import logCount
+from libvirtnbdbackup.sparsestream import streamer
+from libvirtnbdbackup.sparsestream import types
+
+# pylint: disable=unreachable
+
+
+def main() -> None:
+    """Map full backup file to nbd device for single file or
+    instant recovery"""
+    parser = argparse.ArgumentParser(
+        description="Map backup image(s) to block device",
+        epilog=(
+            "Examples:\n"
+            "   # Map full backup to device /dev/nbd0:\n"
+            "\t%(prog)s -f /backup/sda.full.data\n"
+            "   # Map full backup to device /dev/nbd2:\n"
+            "\t%(prog)s -f /backup/sda.full.data -d /dev/nbd2\n"
+            "   # Map sequence of full and incremental to device /dev/nbd2:\n"
+            "\t%(prog)s -f /backup/sda.full.data,/backup/sda.inc.1.data -d /dev/nbd2\n"
+        ),
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    opt = parser.add_argument_group("General options")
+    opt.add_argument(
+        "-f", "--file", required=True, type=str, help="List of Backup files to map"
+    )
+    opt.add_argument(
+        "-b",
+        "--blocksize",
+        required=False,
+        type=str,
+        default="4096",
+        help="Maximum blocksize passed to nbdkit. (default: %(default)s)",
+    )
+    opt.add_argument(
+        "-d",
+        "--device",
+        default="/dev/nbd0",
+        type=str,
+        help="Target device. (default: %(default)s)",
+    )
+    opt.add_argument(
+        "-e",
+        "--export-name",
+        default="sda",
+        type=str,
+        help="Export name passed to nbdkit. (default: %(default)s)",
+    )
+    opt.add_argument(
+        "-t",
+        "--threads",
+        default=1,
+        type=str,
+        help="Amount of threads passed to nbdkit process. (default: %(default)s)",
+    )
+    opt.add_argument(
+        "-l",
+        "--listen-address",
+        default="127.0.0.1",
+        type=str,
+        help="IP Address for nbdkit process to listen on. (default: %(default)s)",
+    )
+    opt.add_argument(
+        "-p",
+        "--listen-port",
+        default="10809",
+        type=str,
+        help="Port for nbdkit process to listen on. (default: %(default)s)",
+    )
+    opt.add_argument(
+        "-n",
+        "--noprogress",
+        required=False,
+        action="store_true",
+        default=False,
+        help="Disable progress bar",
+    )
+    logopt = parser.add_argument_group("Logging options")
+    argopt.addLogArgs(logopt, parser.prog)
+    argopt.addLogColorArgs(logopt)
+    debopt = parser.add_argument_group("Debug options")
+    debopt.add_argument(
+        "-r",
+        "--readonly",
+        required=False,
+        action="store_true",
+        help="Map image readonly (default: %(default)s)",
+    )
+    debopt.add_argument(
+        "-H",
+        "--hexdump",
+        required=False,
+        action="store_true",
+        help="Hexdump data to logfile for debugging (default: %(default)s)",
+    )
+    argopt.addDebugArgs(debopt)
+    args = lib.argparse(parser)
+    args.sshClient = None
+    args.quiet = False
+    fileLog = lib.getLogFile(args.logfile) or sys.exit(1)
+
+    lib.setThreadName()
+    counter = logCount()
+    lib.configLogger(args, fileLog, counter)
+    lib.printVersion(__version__)
+    nbdkitModule = requirements.plugin(args)
+    logging.info("Logfile: [%s]", args.logfile)
+    logging.info("Plugin location: [%s]", nbdkitModule)
+
+    requirements.executables()
+    requirements.device(args)
+    dataFiles = args.file.split(",")
+
+    if len(dataFiles) > 1 and not "full.data" in dataFiles[0]:
+        logging.error("Sequence must start with a full backup")
+    if len(dataFiles) > 1 and args.readonly:
+        logging.error("Device mapping with incrementals doesn't work in readonly mode")
+
+    if counter.count.errors > 0:
+        sys.exit(1)
+
+    fullImage = os.path.abspath(dataFiles[0])
+
+    stream = streamer.SparseStream(types)
+    sTypes = types.SparseStreamTypes()
+
+    # pylint: disable=consider-using-with
+    blockMap = tempfile.NamedTemporaryFile(delete=False, prefix="block.", suffix=".map")
+    logging.info("Write blockmap to temporary file: [%s]", blockMap.name)
+    try:
+        dataRanges = ranges.get(args, stream, sTypes, dataFiles)
+    except RestoreError as e:
+        logging.error(e)
+        sys.exit(1)
+
+    if not ranges.dump(blockMap, dataRanges):
+        sys.exit(1)
+    blockMap.flush()
+    blockMap.close()
+
+    logging.info("Target device: %s", args.device)
+
+    qFh = qemu.util(args.export_name)
+    try:
+        nbdkitProcess = qFh.startNbdkitProcess(
+            args, nbdkitModule, blockMap.name, fullImage
+        )
+    except QemuHelperError as e:
+        logging.error("Failed to start nbdkit process: [%s]", e)
+        sys.exit(1)
+
+    logging.info(
+        "Started nbdkit process pid: [%s], Logfile: [%s]",
+        nbdkitProcess.pid,
+        nbdkitProcess.logFile,
+    )
+    signal.signal(
+        signal.SIGINT,
+        partial(sighandle.Map.catch, args, nbdkitProcess, blockMap, logging),
+    )
+
+    maxRetry = 10
+    retryCnt = 0
+    nbdCmd = [
+        "qemu-nbd",
+        "-c",
+        f"{args.device}",
+        f"nbd://{args.listen_address}:{args.listen_port}/{args.export_name}",
+        "-f",
+        "raw",
+    ]
+    if args.readonly:
+        logging.warning("Device will be mapped readonly without cow.")
+        logging.warning("Mounting will only work with '-o norecovery,ro'")
+        nbdCmd.append("-r")
+    logging.debug(nbdCmd)
+    while True:
+        try:
+            qemu.command.run(cmdLine=nbdCmd, toPipe=True)
+            break
+        except ProcessError as e:
+            if retryCnt >= maxRetry:
+                logging.info("Unable to connect device after service start: %s", e)
+                lib.killProc(nbdkitProcess.pid)
+                break
+            if "Connection refused" in str(e):
+                logging.info("NBD server refused connection, retry [%s]", retryCnt)
+                time.sleep(1)
+                retryCnt += 1
+            else:
+                logging.error("Failed to map device:")
+                logging.error("Stderr: [%s]", str(e))
+                lib.killProc(nbdkitProcess.pid)
+
+    if len(dataFiles) > 1:
+        try:
+            changes.replay(dataRanges, args)
+        except OutputException as e:
+            logging.error("Failed to replay changes: %s", e)
+            lib.killProc(nbdkitProcess.pid)
+            sys.exit(1)
+
+    logging.info("Done mapping backup image to [%s]", args.device)
+    logging.info("Press CTRL+C to disconnect")
+    while True:
+        time.sleep(60)
+
+
+if __name__ == "__main__":
+    main()

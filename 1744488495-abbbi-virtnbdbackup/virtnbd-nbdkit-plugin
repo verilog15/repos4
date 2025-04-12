@@ -1,0 +1,252 @@
+"""
+Copyright (C) 2023  Michael Ablassmeier <abi@grinser.de>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+
+import os
+import builtins
+import json
+import pprint
+import nbdkit
+
+API_VERSION = 2
+
+blockMap = None
+blockMapFile = None
+image = None
+debug = "0"
+hexdump = "0"
+
+# pylint: disable=global-statement,global-variable-not-assigned,redefined-builtin,too-many-statements,too-many-branches
+
+
+def config(key, value):
+    """Read parameter values, needs to use open function via
+    builtins as the python plugin itself defines it again"""
+    global blockMap
+    global blockMapFile
+    global image
+    global debug
+    global hexdump
+    if key == "blockmap":
+        blockMapFile = value
+        with builtins.open(blockMapFile, "rb") as fh:
+            blockMap = json.loads(fh.read())
+        return
+    if key == "disk":
+        image = value
+        return
+    if key == "debug":
+        debug = value
+        return
+    if key == "hexdump":
+        hexdump = value
+        return
+
+    raise RuntimeError(f"Unsupported parameter: {key}")
+
+
+def log(msg):
+    """Debug logging"""
+    global debug
+    if debug == "1":
+        nbdkit.debug(msg)
+
+
+def config_complete():
+    """Check if we have all required parameters"""
+    global image
+    global blockMap
+    global blockMapFile
+    if image is None or blockMap is None:
+        raise RuntimeError(
+            "Missing parameter: path to blockmap and disk files required."
+        )
+
+    if not os.path.exists(image):
+        raise RuntimeError(f"Specified image file: [{image}] does not exist.")
+    if not os.path.exists(blockMapFile):
+        raise RuntimeError(f"Specified blockmap file: [{blockMapFile}] does not exit.")
+
+    pprint.pprint(blockMap)
+
+
+def thread_model():
+    """nbdkit threading model"""
+    return nbdkit.THREAD_MODEL_PARALLEL
+
+
+def open(_):
+    """Open backup files and return FD for each"""
+    fd = os.open(image, os.O_RDONLY)
+    log(f"File descriptors: {fd}")
+    return fd
+
+
+def close(_):
+    """Close"""
+    return 1
+
+
+def get_size(_):
+    """Loop through the metadata and calculate the complete
+    virtual disk size"""
+    global blockMap
+    size = 0
+    for m in blockMap:
+        # use only size from full backup image
+        if m["file"] == image:
+            size += m["length"]
+    log(f"DISK SIZE: {size}")
+    return size
+
+
+def _hexdump(data: bytearray, width: int = 16):
+    """Hexdump for debugging, dumps requested blocks in an
+    hexdump -C compatible format"""
+    zero_count = 0
+    skip_mode = False
+
+    for i in range(0, len(data), width):
+        chunk = data[i : i + width]
+
+        if all(byte == 0 for byte in chunk):
+            zero_count += len(chunk)
+            skip_mode = True
+            continue  # Skip this block
+
+        if skip_mode:
+            log(f"... ({zero_count} zero bytes skipped)")
+            zero_count = 0  # Reset counter
+            skip_mode = False
+
+        hex_part = " ".join(f"{byte:02X}" for byte in chunk)
+        ascii_part = "".join(chr(byte) if 32 <= byte < 127 else "." for byte in chunk)
+        log(f"{i:08X}  {hex_part:<{width * 3}}  |{ascii_part}|")
+
+    if zero_count > 0:
+        log(f"... ({zero_count} zero bytes skipped)")
+
+
+def pread(h, buf, offset, _):
+    """Return the right data during read operation.
+
+    Function uses the generated block map to check where
+    in the stream format the required block offset is to
+    be found and maps it accordingly and returns requested
+    data.
+
+    There might be situations where this goes really wrong
+    and usually this results in an non-readable disk image.
+    By using the blockfilter plugin, it "should" work most
+    of the time, because the requested block size does
+    not span amongst multiple frames within the sparse
+    backup format.. as it should match the physical
+    sector size .. hopefully
+    """
+    global blockMap
+    global hexdump
+
+    log(f"Handle: {h}")
+
+    # get block where offset sort of matches
+    data = bytearray()
+
+    blockListFull = sorted(
+        [
+            b
+            for b in blockMap
+            if b["originalOffset"] <= offset < (b["originalOffset"] + b["length"])
+            and not b["inc"]
+        ],
+        key=lambda x: x["originalOffset"],
+    )
+    log("-------------------------------------------")
+    log(f"matching blocklist from full backup: {blockListFull}")
+    log("-------------------------------------------")
+    if len(blockListFull) == 1:
+        log("using first block from blocklist")
+        block = blockListFull[0]
+    else:
+        log("Using block from full backup")
+        block = blockListFull[-1]
+
+    log(f"Processing block: {block}")
+
+    # where to read in the stream file
+    fileOffset = block["offset"] - block["originalOffset"] + offset
+    dataFile = block["file"]
+
+    log(f"READ FROM: {dataFile}")
+    log(f"READ AT: {fileOffset}")
+    log(f"READ: {len(buf)}")
+    log(f"BLOCK LENGTH: {block['length']}")
+
+    if len(buf) <= block["length"]:
+        log("Block found contains all required data")
+        if block["data"] is False:
+            data += b"\0" * len(buf)
+        else:
+            data += os.pread(h, len(buf), fileOffset)
+
+        buf[:] = data
+        if hexdump == "1":
+            _hexdump(data)
+        return
+
+    remaining = len(buf) - block["length"]
+    included = block["length"]
+    log(f"Read spans multiple blocks, need to read: {remaining} from next block.")
+    log(f"Read available data size {included} from current block.")
+    data += os.pread(h, included, fileOffset)
+
+    count = block["count"] + 1
+    while len(data) != len(buf):
+        log(f"Locate next available block number {count}")
+        next_block = [b for b in blockMap if b["count"] == count]
+        if not next_block:
+            raise RuntimeError("Unable to locate next block")
+
+        next_block = next_block[0]
+
+        log(f"Found next block: {next_block}")
+        if remaining >= next_block["length"]:
+            log("Next block does not contain all remaining data")
+            to_read = next_block["length"]
+            count += 1
+        else:
+            to_read = remaining
+
+        if next_block["data"]:
+            log(f"Read {to_read} data size at {next_block['offset']} from this block.")
+            data += os.pread(h, to_read, next_block["offset"])
+        else:
+            log(f"Next block contains zeroes, return {remaining} zeroes")
+            data += b"\0" * to_read
+
+        remaining -= to_read
+        if remaining == 0:
+            log("All requested data read")
+        else:
+            log(f"{remaining} data left to read, next block to request: {count}")
+
+    if len(data) != len(buf):
+        raise RuntimeError(
+            f"Unexpected short read from file. Read: {len(data)} requested: {len(buf)}"
+        )
+
+    if hexdump == "1":
+        _hexdump(data)
+    buf[:] = data

@@ -1,0 +1,5 @@
+include LICENSE
+include Changelog
+include docker/*
+include man/*
+include requirements.txt

@@ -1,0 +1,1324 @@
+Version 2.26
+---------
+ * virtnbdbackup:
+ - Add info log message before and after extent query has finished.
+ - Enhance function to detect sparse/fstrimmed regions (#263).
+ - Enhance CI tests
+
+Version 2.25
+---------
+ * virtnbdbackup:
+  - Detect QCOW2 formatted direct attached RAW Volumes (#264):
+
+  Some solutions such as OpenNebula will use direct attached LVM volumes in
+  virtual machines. These LVM volumes were treated like a RAW device, but
+  allow all required operations for full/incremental backup.
+
+  Changes introduced in v2.18 would exclude these devices from backup even if
+  `--raw` option is passed. Now during disk detection, use the disk format in
+  the driver type setting to correctly detect a lvm volume backed by qcow2,
+  and handle them just like regular qcow based images.
+
+Version 2.24
+---------
+ * virnbdbackup:
+  - Add option --no-sparse-detection (#263): The feature implemented as
+  with version 2.21 requires to query the complete base:allocation
+  bitmap during incremental backup.
+
+  Depending on the Hypervisor hardware and the virtual machine disk size,
+  querying the base:allocation bitmap may take longer than to simply treat
+  fstrimmed blocks the same way as changed blocks and include them in the
+  backup.
+
+  The option introduced can be used to disable the new behavior and can
+  enhance backup times for specific users.
+
+Version 2.23
+---------
+ * virtnbdbackup:
+  - Log created nbd socket information in URI format, so it can be re-used
+  with external tools more easily.
+  - Add human readable backup sizes in log output.
+
+Version 2.22
+---------
+ * Test enhancements:
+   - check btrfs filesystem stats in restored VM.
+   - run checksum verify after all backups.
+ * virtnbdbackup:
+   - If NBD connection drops, catch correct exception. (#254)
+   - Provide better error message if checkpoint inconsistency is detected.
+
+Version 2.21
+---------
+ * virtnbdbackup: Detect dirty regions containing only zeroes during
+ incremental backup (fstrim) (#250)
+
+ Before, any dirty block being part of the incremental/differential bitmap
+ would be backed up, even if not required. Thanks to the input and
+ enhancements
+ of
+	Roman Grigoriev <grigoriev177 _at_ gmail.com>
+ and
+	Denis V. Lunev <den _at_ openvz.org>
+ the zeroed block regions are now compared to the base:allocation
+ bitmap and detected as such.
+
+ This reduces the amount of data backed up if virtual machines have disks
+ configured with discard=unmap option and use fstrim to free unused space.
+
+Version 2.20
+---------
+ * virtnbdmap: add option -H for better debugging, code cleanup
+ * virtnbdmap: fix situations where multiple blocks in row are
+ required to map the correct data.
+
+Version 2.19
+---------
+ * virtnbdmap sometimes fails to correctly map disk images due to
+ block offsets spanning multiple frames in the stream format, resulting in
+ Input/Output errors accessing the disk partition data (#249)
+
+Version 2.18
+---------
+ * If auto backup mode is switched to incremental and --raw option
+ is passed, backup would fails instead of showing an warning that
+ raw devices are excluded (#239)
+
+Version 2.17
+---------
+ * Add rpm package build for fedora 41 (#234)
+ * virtnbdbackup: Remote backup fails if spaces exist in image path (#235)
+ * virtnbdrestore: Remote restore would fail if target path contains spaces.
+
+Version 2.16
+---------
+ * virtnbdrestore: If domain with multiple disks is restored and config
+ adjustment is requested, only the path to the last disk is updated. (#232).
+ Thanks Richard Stephens for report and fix.
+ * virtnbdrestore: fix logic for adjusting the vm name
+
+Version 2.15
+---------
+ * Update Dockerfile and README
+ * virtnbdrestore: use absolute path to disk files during local restore.
+ * virtnbdrestore: make absolute path mandatory for remote restore.
+
+Version 2.14
+---------
+ * virtnbdrestore: Add option -A (--preallocate) to create thick, full
+ pre-allocated target images during restore.
+
+Version 2.13
+---------
+ * virtnbdbackup: If libvirt daemon is unreachable, it would fail with an
+ misleading error code due exception not raised.
+ * virtnbdbackup: setup callback function using registerCloseCallback, if
+ libvirt connection drops during backup, re-establish the connection in order
+ to stop leftover backup tasks
+ * virtnbdbackup: catch exceptions if nbd read fails.
+ * virtnbdrestore: add option -C to adjust config file name during restore.
+
+Version 2.12
+---------
+ * Update README
+ * virtnbdrestore: fix exception if no $HOME environment variable is set
+ (#197)
+
+Version 2.11
+---------
+ * Update README
+ * Raise NBD connection error if `--tls` option is set but installed libnbd
+ bindings for python do not support required features.
+ * Set TLS connection options to TLS_REQUIRE instead of TLS_ALLOW which would
+ fallback to non-encrypted data transfer.
+ * If LIBNBD_DEBUG is set, add NBD trace messages to logfile.
+
+Version 2.10
+---------
+ * Add --ssh-port option.
+
+Version 2.9
+---------
+ * Fix: backup with compression enabled fails: unsupported operand type(s) for
+ +: 'int' and 'dict' (#177)
+
+Version 2.8
+---------
+ * Add packages compatible to fedora 39 to package build (#174)
+ * Show total saved disk size in human readable output (#173)
+
+Version 2.7
+---------
+ * Update README
+ * End backup with warning if software emulated TPM device is attached
+ (#169)
+ * Detect remote connection based on libvirt URI, checking hostnames could lead
+ to situation where local backup is detected as remote backup (#170)
+
+Version 2.6
+---------
+ * Fix IndexError exception if auth file is used in qemu uri (#167)
+ * Credential function for libvirt must return integer: fix NoneType
+ exception if actual libvirt authentication is required.
+ * Simplify libvirt authentication code: attempt to use SASL based mechanism
+ only if --user and --password options are set.
+ * If authentication fails because of missing SASL mechs, ajdust error
+ message, provide hint for --user and --password options.
+ * Update README regards OVIRT/RHEV/OLVM (no mechanism available: No worthy
+ mechs found)
+
+Version 2.5
+---------
+ * Move some log messages from info to debug loglevel
+ * Log information about libnbd version only once
+ * Catch command not found error during remote backup if qemu-img
+ is missing: change loglevel to warning.
+ * Catch command not found error during remote restore: fail with
+ proper error message.
+ * If no qcow image info has been created during backup, issue warning
+ during restore that default options are used.
+ * Update README: add note about scratch files.
+ * Do not attempt to freeze filesystems if virtual machine is in paused state
+ (#166)
+
+Version 2.4
+---------
+ * Update RADME
+ * Add qemu-utils to package dependencies: if installed on a system without
+ libvirt/qemu, backup fails because of missing qemu-img executable.
+ * Add openssh-client to package dependencies: required for remote libvirtd
+ connection.
+ * Catch exception if executed commands such as qemu-img are missing on
+ system.
+ * Code cleanup
+
+Version 2.3
+---------
+ * Update README
+ * Add option -S (--start-domain): if specified and virtual domain is offline
+ during backup, domain will be started in pause mode, allowing to execute
+ full/diff/inc backups. Domain is destroyed as soon as operation finished
+ by using libvirt's AUTODESTROY flag. (#164)
+ * Move code for preflight tests to separate module.
+
+Version 2.2
+---------
+ * Fix Progressbar during restore: wrong values used. (#160)
+ * Catch exception if during restore connection to NBD server fails (#163)
+ * Provide better info message what NBD connection is waiting for.
+ * Call flush() on NBD connection during restore: restore of domains
+ with multiple disks could fail with NbdConnectionTimeout due to race
+ condition (#163)
+ * Pass pidFile to qemu-nbd process for local NBD server during restore,
+ report PID of forked process instead of parent.
+
+Version 2.1
+---------
+ * Fix Progressbar: Since change for issue #133 the Progressbar was
+ updated with wrong values and as result progressed too fast for the amount of
+ data actually written. (#160)
+
+Version 2.0
+---------
+ * Update README
+ * Fail early during incremental or differential backup if no
+ full backup is found in target directory.
+
+Version 1.9.55
+---------
+ * virtnbdmap: pass listen address argument to qemu-nbd command.
+
+Version 1.9.54
+---------
+ * Exit with error if both compress option and raw output format
+ is specified: options are mutually exclusive.
+ * Update progressbar during chunked data read/write. If big portions
+ of the disk are backed up, it would appear as if no progress is made
+ (#133)
+ * If an active remote backup is aborted (ctrl+c), stopping the libvirt backup job
+ failed because the signal is sent to the used ssh connection, too. Now the
+ signal handler attempts to re establish the connection to the remote system
+ in order to correctly stop the backup operation.
+ * Add close() function to libvirt client class: disconnect libvirt after
+ backup has finished.
+ * virtnbdmap: code reorg.
+
+Version 1.9.53
+---------
+ * Move checksum related code to own function
+ * Set a shorter thread name, makes logging messages are easier to read.
+ * Add opensuse/leap:15.5 to release build.
+
+Version 1.9.52
+---------
+ * Code cleanup
+ * Build release packages using github actions.
+
+Version 1.9.51
+---------
+ * Slight change in log message wording.
+ * virtnbdrestore: if starting NBD service on remote system fails, catch
+ exceptions accordingly.
+ * virtnbdrestore: if --nbd-ip parameter is set, pass -b option to qemu-nbd
+ command so the NDB service binds to specified IP address.
+ * virtnbdrestore: Set SSH session mode to UPLOAD, otherwise uploading
+ files such as UEFI images and vm config fails.
+ * virtnbdrestore: Catch exception if connection to libvirt fails
+ * virtnbdrestore: Create target directory on remote system only if it does
+ not exist, Thanks @draggeta
+ * CI: enhance remote backup check: test if UEFI loader files are copied
+ correctly during remote backup.
+
+Version 1.9.50
+---------
+ * Add openssh-client to docker image required for remote backup
+ functionality (#151)
+ * Check if specified ip address in `--nbd-ip` parameter is an
+ ipv6 address and if so, use ipv6 ip notation for NBD client
+ connection (#150)
+ * Fix NBD connection timeout: current implementation only waited
+ until NBD server on socket was reachable. Now it also attempts to
+ retry connection for remote TCP NBD servers (#150)
+ * Fix exception in ssh client during raise
+
+Version 1.9.49
+---------
+ * Logging: Use blue color definition instead of light-blue which might not be
+ supported by all colorlog versions (#148)
+
+Version 1.9.48
+---------
+ * Rework some error messages / exception handling.
+
+Version 1.9.47
+---------
+ * Remote backup: catch more exceptions accordingly, provide better
+ error message if ssh connection fails.
+
+Version 1.9.46
+---------
+ * Update package dependencies in docker file.
+ * Spelling fixes
+
+Version 1.9.45
+---------
+ * virtnbdbackup: Add more info output during checkpoint handling, move
+ error message.
+ * Add colorful log messages so warnings and and errors are easier to spot:
+ can be disabled using the --nocolor option.
+
+Version 1.9.44
+---------
+ * virtnbdbackup: disable progressbar if quiet option is enabled.
+
+Version 1.9.43
+---------
+ * virtnbdbackup: add --quiet option: disable log output to stderr,
+ log into logfile only. (#137)
+
+Version 1.9.42
+---------
+ * virtnbdbackup: skip checksum output if backup is redirected to stdout
+
+Version 1.9.41
+---------
+ * virtnbdrestore: add Option -B to allow changing default buffer size
+ during verify to speed up process.
+
+Version 1.9.40
+---------
+ * Update README
+ * New feature: compute adler32 checksum for written data and add
+ verify option to virtnbdrestore, so its possible to check for corrupt
+ backups without having to restore.
+
+Version 1.9.39
+---------
+ * Update README
+
+Version 1.9.38
+---------
+ * Release packages compatible with RHEL9 (#130)
+ + add required vagrant file
+ + adjust requirements during package build
+ + put dist files into separate directories
+
+Version 1.9.37
+---------
+ * Update README: add example how to convert qcow images to the required
+ format to support all backup features.
+
+Version 1.9.36
+---------
+ * Fail with better understandable error message if libvirt version requires
+ the virtual machine configuration to be adjusted for backup to work.
+
+Version 1.9.35
+---------
+ * Fix some pylint warnings, add ignores.
+
+Version 1.9.34
+---------
+ * Update README
+
+Version 1.9.33
+---------
+ * Update README
+
+Version 1.9.32
+---------
+ * Fix TypeError during backup of transient virtual machines: do not pass
+ flags to checkpointCreateXML as list. (#122)
+ * Add simple test for transient virtual machine handling.
+
+Version 1.9.31
+---------
+ * setup.cfg: fix obsolete description-file warning
+ * In case domain has an already active block job, add note about
+ option -k to the error message (#120).
+
+Version 1.9.30
+---------
+ * Update README
+
+Version 1.9.29
+---------
+ * Update README
+
+Version 1.9.28
+---------
+ * Remote backup: enhance logging if executing remote command via SSH fails.
+
+Version 1.9.27
+---------
+ * Enhance debug logging for remote backup.
+ * Update README regarding remote backup and its requirements. (#117)
+
+Version 1.9.26
+---------
+ * virtnbdbackup: transient vm backup: validate the state of the checkpoint
+   during redefine: this can help to detect situations where the bitmap is
+   broken.
+ * virtnbdmap: Fix typo in log message.
+ * Update README regarding port usage during remote backups.
+ * Add notes regarding stability of the features, thanks @pipo
+
+Version 1.9.25
+---------
+ * Fix typo in log messages.
+
+Version 1.9.24
+---------
+ * Remove leftover pid files in /var/tmp during offline backup (#114)
+
+Version 1.9.23
+---------
+ * Code cleanups
+ * Spelling fixes, run codespell during CI
+
+Version 1.9.22
+---------
+ * Code cleanups, pylint warning
+ * Update copyright stanca
+
+Version 1.9.21
+---------
+ * Code cleanups
+
+Version 1.9.20
+---------
+ * More code cleanup and reorg
+ * Module directory is now pylint clean (except for some ignores): run pylint
+  using github actions.
+
+Version 1.9.19
+---------
+ * Code cleanup: move some functions to separate files.
+
+Version 1.9.18
+---------
+ * virtnbdbackup: treat direct attached lun and block devices just like
+ regular raw disks: backup will work but only in backup mode copy and
+ of course full provisioned backup of these block devices is created
+ if option `--raw` is enabled. (#111)
+
+Version 1.9.17
+---------
+ * virtnbdrestore: fix restore fails with IndexError if CDROM or LUN devices
+ appear in the list of devices before the first disk. (#110).
+
+Version 1.9.16
+---------
+ * virtnbdrestore: use disk size from the latest backup during restore: handle
+ situations where disk size has changed between full and incremental or
+ differential backups (#109)
+
+Version 1.9.15
+---------
+ * Add install_requires to setup.py
+ * Backup and restore autostart setting for domain if set. (#106)
+
+Version 1.9.14
+---------
+ * Adjust log messages during disk parsing.
+ * Ignore direct attached block devices which use disk type notation (#98)
+
+Version 1.9.13
+---------
+ * Fallback to backup mode copy if virtual machine has only raw disks
+ attached (#94)
+ * Some fixes in regard on how attached 'raw' disks are handled:
+  + fail correctly if backup to stdout is attempted
+  + override --raw option during attempted incremental or differential backup:
+  backup modes will only be attempted for disks supporting the required
+  features.
+ * If no disks suitable for backup are detected or backup fails, save at least
+ virtual machine configuration and related kernel/uefi files (#93)
+
+Version 1.9.12
+---------
+ * Rework logging facilities: use local log instance of global logging object
+ to have saner logging information.
+
+Version 1.9.11
+---------
+ * Log traceback for unknown exceptions for easier analysis of issues. (#92)
+
+Version 1.9.10
+---------
+ * Remote incremental backup fails: checkpoint virtnbdbackup.1 already exists:
+ check for checkpoint file only on local system, not on the remote system
+ (#89)
+
+Version 1.9.9
+---------
+ * Fix exception handling/raise in case bitmap already exists. (#85)
+
+Version 1.9.8
+---------
+ * Code cleanup
+
+Version 1.9.7
+---------
+ * Update README
+ * Code cleanup, use shorter class names, change some error handling.
+ * virtnbdrestore: in case option -D is passed, set option to adjust virtual
+ machine config automatically.
+ * virtnbdbackup: amount of ports used for offline backup depends on how many
+ workers are used, not how much disks are attached, log correct port range use
+ during offline backup.
+
+Development:
+ * Github workflow now saves all files created by testsuite for better
+ analysis, extend some testcases.
+
+
+Version 1.9.6
+---------
+ * virtnbdrestore: add detection for disks with volume notation, reset
+ type to file during restore so virtual machine config is adjusted to
+ new restore paths. (#81)
+
+
+Version 1.9.5
+---------
+ * virtnbdrestore and virtnbdmap: code cleanups, add type annotations.
+
+
+Version 1.9.4
+---------
+ * Code cleanup: more type annotations, correctly catch ssh exceptions.
+ * Better logging information in case of remote backup
+ * Remote backup of offline virtual machines with multiple disks may fail:
+ (#82) port used by remote NBD Service must be unique.  Also report used
+ ports in logfile.
+
+
+Version 1.9.3
+---------
+ * Move function call for backing up qemu disk information outside worker
+ threads: should fix occasional "Fatal Python error: _enter_buffered_busy"
+ error during backup.
+
+
+Version 1.9.2
+---------
+ * Return function if gathering qemu disk info fails for some reason.
+ * If remote backup is saved to local zip file, backup may fail because
+ absolute path to additional loader/nvram files is wrong.
+ * Fix naming if copy backup is saved to zip file output: dont append
+ checkpoint information to created files.
+
+
+Version 1.9.1
+---------
+ * Code cleanup: fix pylint warning, remove obsolete p.wait() calls with
+ hardcoded time limit, start adding type annotations, reworked imports.
+ * Fix disk detection with volume notation. (#81)
+ * Backup and restore qcow image related settings: during backup
+ qemu-img info is called on qcow based image devices and qcow specific options
+ are stored as json dump. If information is existent, on restore the
+ original settings of the qcow image (such as cluster size or other options)
+ are now applied during image creation. (#80)
+ * Fix some race conditions during restore of multiple disks and sequences: NBD
+ connection handle was not closed, following qemu-nbd calls would fail due
+ to locked files or already in use tcp ports.
+
+
+Development:
+ * Change github workflows: now use ubuntu 22.04 and add test for remote
+ backup via localhost.
+
+
+Version 1.9
+---------
+ * Update README
+ * Make --compress option configurable, it is now possible to set
+ compression level (--compress=X) (#77)
+ * Fix offline backup of virtual machines with multiple disks attached: nbd
+ connection would use wrong socket file. (#76)
+ * Fix offline backup of remote vms: set missing socket file parameter.
+
+
+Version 1.8.2
+---------
+ * Code cleanup
+ * Fix Issue (#74): Remote backup fails to copy [loader] file
+
+Version 1.8.1
+---------
+ * Update manpages to be more debian compliant
+ * Add manpages to manifest file, too
+
+Version 1.8
+---------
+ * Add manpages
+
+Version 1.7
+---------
+ * Code cleanup
+
+Version 1.6
+---------
+* virtnbdbackup:
+	+ add --syslog option: enable log output to system syslog
+	facility.
+
+Version 1.5
+---------
+* virtnbdrestore:
+	+ add --logfile option (defaults to $HOME)
+	+ print actual json if dumping saveset contents
+* virtnbdmap:
+	+ add --logfile option (defaults to $HOME)
+
+Version 1.4
+---------
+* If backup/restore is executed as regular user, set default uri to
+qemu:///session.
+
+Version 1.3
+---------
+* Code cleanup
+* Update README
+
+Version 1.2
+---------
+* Code cleanup
+
+Version 1.1
+---------
+* Code cleanup
+* Add warning if reading checkpoint information with size fails.
+
+Version 1.0
+---------
+* Code cleanup
+* (#69) Rework --printonly option: use checkpoint size as reported by libvirt
+for estimating next incremental or differential backup size.
+* (#70) Add --threshold option for incremental / differential backup 
+
+Version 0.99
+---------
+* Add python3-paramiko to debian build dependencies (#68)
+
+Version 0.98
+---------
+* Add missing license/copyright headers
+
+Version 0.97
+---------
+* Update README
+
+Version 0.96
+---------
+* Code cleanup
+* Add MANIFEST.in: add additional files like dockerfile to source dist
+package.
+* Add LICENSE and Changelog file to rpm/debian package distribution configs.
+
+Version 0.95
+---------
+* virtnbdrestore: code cleanup
+* Add updated dockerfile based on work by Adrián Parilli
+<a.parilli@staffwerke.de> to the repository.
+* Update README
+
+Version 0.94
+---------
+* virtnbdmap: use outputhelper for replay
+
+Version 0.93
+---------
+* Code cleanup
+
+Version 0.92
+---------
+* Code cleanup
+* virtnbdbackup: Relax check for empty target directory: now only fails if
+already an backup (partial or not) exists within the target directory.
+
+Version 0.91
+---------
+* Code cleanup
+
+Version 0.90
+---------
+* Code cleanup
+
+Version 0.89
+---------
+* virtnbdrestore: check if additional boot files such as nvram/kernel images
+exist and if not, restore them to the original path instead of just warning
+the user about manual steps being required.
+
+Version 0.88
+---------
+* virtnbdrestore: Allow restore into non-empty directories, so one can
+restore the disk files into an existing libvirt managed volume directory.
+If the restore target path is an libvirt managed pool, refresh the
+pool contents. (#67)
+* virtnbdrestore: dont continue with restore if -o dump is specified.
+
+Version 0.87
+---------
+* Code cleanup
+* Add support for remote backup via NBD+TLS (#66)
+* Update README
+
+Version 0.86
+---------
+* libvirt uri: both user and password parameters are mandatory if no qemu+ssh
+session is specified.
+
+Version 0.85
+---------
+* virtnbdrestore: check if target files exist during remote operation and
+fail accordingly.
+* Remote backup: use paramikos built in sftp client to copy files instead
+of third party scp module.
+
+Version 0.84
+---------
+* Add --nbd-ip option: can be used to bind nbd service for backup task
+to specific remote IP.
+
+Version 0.83
+---------
+* Code reorg
+* Fix remote restore: UnboundLocalError: local variable 'pid' referenced
+before assignment
+
+Version 0.82
+---------
+* Move common arguments to separate file.
+
+Version 0.81
+---------
+* Report PID and errors of commands executed on remote system.
+* Initiate ssh session for backup of boot config only if required.
+* Update README
+
+Version 0.80
+---------
+* Fix debug output
+* Add remote backup functionality (#65).
+
+Version 0.79
+---------
+* Add -U/--uri option: can be used to specify libvirt connection URI, if
+authfile is specified, use openAuth to authenticate against libvirt daemon.
+* Add --user and --password options: can be used to authenticate against
+libvirt daemon.
+* Update README, add notes about ovirt/rhev etc.
+
+Version 0.78
+---------
+* Code cleanup
+* Update README
+
+Version 0.77
+---------
+* Code cleanup
+* virtnbdbackup
+ + detect if there is an active backup operation running and fail accordingly
+ instead of running into "Cannot acquire state change lock" timeout exception.
+
+Version 0.76
+---------
+* virtnbdbackup:
+ + Change some log messages: more detailed report on skipped devices during backup.
+ + Add option --freeze-mountpoint: during backup, only filesystems of
+ specified mountpoints are freezed and thawed. (#60)
+* virtnbdrestore:
+ + Option -c would only adjust virtual machine config for the first disk.
+ + Option -c now correctly removes excluded disks from the adjusted virtual
+ machine configuration.
+* Add --version option for all utilities.
+* Vagrant scripts: test installation/execution after creating rpm packages.
+* Update README
+
+Version 0.75
+---------
+* virtnbdbackup: report amount of thawed/freezed filesystems during backup.
+* Update README
+
+Version 0.74
+---------
+* virtnbdbackup: add some more debug messages around freezing/thwaing
+filesystems and backup job operation.
+
+Version 0.73
+---------
+* virtnbdbackup: limit the amount of concurrent workers to the amount of
+disks detected, so users cannot specify an higher amount of workers than
+disks are attached to the virtual machine.
+
+Version 0.72
+---------
+* Code cleanup
+* Update README
+
+Version 0.71
+---------
+* Code cleanup
+* Update README
+
+Version 0.70
+---------
+* Code cleanup
+* Exit gracefully if setting up the logfile already fails.
+* virtnbdrestore: make option `-a restore` default, if output directory
+is named "dump" or `-a dump` is specified, stream information is dumped.
+* Update README, examples and tests accordingly
+
+Version 0.69
+---------
+* Code cleanup
+* virtnbdbackup: exit early if removing checkpoints fails during full
+backup.
+* virtnbdrestore: do not write zeroes during restore of image, as the
+resulting zeroed regions are then reported as being "data": this would result
+in further backups of the virtual machine to be thick provisioned, as even
+zeroed regions are saved. (#56)
+* virtnbdrestore: dont adjust vm config if option -c is missing.
+* virtnbdrestore: now removes existent backing stores if adjust setting is
+enabled: usually the case if virtual machine operated on snapshot during
+backup.
+
+Version 0.68
+---------
+* Code cleanup at different places. Make the output helper wrapping.
+* Use Elementree from lxml for easier access via xpath, adjust dependencies
+* Adjust pylintrc
+* virtnbdrestore: add option -c: adjusts required paths within restored
+virtual machine config so it can be defined using virsh. (#54)
+* virtnbdrestore: add option -D: in combination with option -c can be used to
+register virtual machine on libvirt daemon after restore.
+* virtnbdrestore: add option -N: redefine domain with specified name, if not
+passed, prefix "restore_" is added.
+
+Version 0.67
+---------
+* Disable xml based check if incremental backup is enabled for
+libvirt versions >= 7.6.0, the feature is enabled by default
+now: https://github.com/libvirt/libvirt/blob/master/NEWS.rst#v760-2021-08-02
+* Fix dependencies for rpm package: nbdkit-plugin-python3 -> nbdkit-plugin-python
+* Fix documentation regards build on almalinux
+* virtnbdbackup: introduce backup mode "auto": automatically execute full
+backup if target folder is empty. If full backup exists in target folder,
+switch to incremental backup mode automatically. (#52)
+
+Version 0.66
+---------
+* virtnbdmap: use absolute path of files specified.
+* nbdkit plugin: add debug flag, be less verbose (#47)
+* Fix pylint warnings
+* Update README
+
+Version 0.65
+---------
+* virtnbdmap: open target device with O_DIRECT during replay of incremental
+data to speedup the process: no need to sync then.
+* virtnbdmap: remove nbdkit logfile after exiting successfully
+* virtnbdmap: use pidfile and send signal to correct process. (#46)
+* virtnbdmap: check if the passed device starts with /dev/nbd
+* virtnbdmap: code cleanup
+
+Version 0.64
+---------
+* virtnbdmap: minor code cleanup
+* virtnbdmap: add progressbar during replay of incremental backups
+* virtnbdmap: pass listen port to qemu-nbd command too.
+
+Version 0.63
+---------
+* virtnbdmap: update epilog examples, add logfile option
+* virtnbdmap: add --readonly option.
+* virtnbdmap: add --listen-port option: useful if one wants to map multiple
+backups on the same system concurrently.
+* virtnbdmap: better error handling if nbdkit process fails to start.
+* Update README
+
+Version 0.62
+---------
+* Add script to create virtualenv with required dependencies.
+* virtnbdmap now supports mounting of full->incremental (or differential)
+chains: the current approach is to use the nbdkit COW (copy on write) filter
+to replay the data blocks against the mapped nbd device.
+
+Version 0.61
+---------
+* Add vagrant scripts
+* Print libvirt library version.
+* Disable xml based check if incremental backup capability is enabled for
+libvirt versions > 8002000: feature is enabled by default. (#4)
+
+Version 0.60
+---------
+* Add python3-dataclasses to RPM dependencies.
+* Update README
+
+Version 0.59
+---------
+* Add epilog to help output with some example commands
+* Update README
+
+Version 0.58
+---------
+* Slight code improvements
+* Skip devices with type "floppy", just as "cdrom" devices.
+
+Version 0.57
+---------
+* Backup configured kernel/initrd images used for direct boot too.
+
+Version 0.56
+---------
+* Fix for Issue (#40): redefining checkpoints fails
+
+Version 0.55
+---------
+* Correct some wrongly caught exceptions
+* Update README
+
+
+Version 0.54
+---------
+* (#38) Backup virtual machines loader bios and nvram if defined, provide
+notice to user during restore that files must be copied manually.
+* virtnbdrestore: Fixes for --until option:
+	+ would not stop processing further files since --sequence option was introduced
+	+ would stop before actually processing specified checkpoint, now function
+	stops after restoring data of checkpoint to be reached.
+	+ extend tests
+* Update README
+
+Version 0.53
+---------
+* Cleanup codebase
+* Fix differential backup for offline domains: apply same logic as during
+incremental backup.
+
+Version 0.52
+---------
+* Update help regarding --qemu option: works with diff/inc now too
+* Group possible options in help output
+* Introduce more exceptions, cleanup codebase.
+
+Version 0.51
+---------
+* Cleanup codebase, no functional changes.
+
+Version 0.50
+---------
+* Fix sequence restore: function returned too early.
+* Parameter for --sequence option does not require absolute path anymore.
+
+
+Version 0.49
+---------
+* virtnbdrestore now support restoring a manual sequence of data files
+passed by the --sequence option.
+
+Version 0.48
+---------
+
+* Internal code changes: start using proper exceptions if stream format
+is not parseable
+* virtnbdbrestore: add --sequence option, allows to specify a comma separated
+list of backup files whose information should be dumped. Next step is to
+implement restore of a specified sequence.
+
+
+Version 0.47
+---------
+* Fix issue #37: If an backup directory contains multiple differential
+or incremental backups, its not possible to use the --until option for
+point in time restore, because the differential backups defaulted to
+the first checkpoint name in the metadata header. Recover would
+stop too early in such cases..
+
+Now the checkpoint name in the metadata header contains the same timestamp as
+the target files, which make it possible to use the --until option too.
+
+Version 0.46
+---------
+* Add changelog file
+
+Version 0.45
+---------
+* Adds differential backup option: backup option -l diff now saves the
+delta since the last incremental or full backup. Option -q now uses
+nbdinfo instead of qemu-img map, which supports reading specific bitmap
+information: now option -q can be used during incremental/differential backup
+too,which might be good for debugging issues.
+* If incremental backup for offline Domain is attempted, backup would save all
+data, not just dirty extents: now saves only dirty extents.  
+* Extends the testsuite with tests for the implemented new features
+* Fixes various pylint warnings, better error handling in some situations.
+* Update documentation and executable dependencies for the debian package build.
+
+**Full Changelog**: https://github.com/abbbi/virtnbdbackup/compare/v0.44...v0.45
+
+Version 0.44
+---------
+Ensure checkpoint chain consistency:
+
+As discussed during issue #33, the "parent" option to a checkpoint
+created is readonly currently. Thus, virtnbdbackup can not force
+an parent checkpoint during creation of the actual checkpoints.
+    
+This means we cannot ensure that the complete checkpoint chain
+we are based on for the current incremental backup is entirely
+created by us, like so:
+    
+   > virsh checkpoint-list vm1 --tree
+   > virtnbdbackup.0                                                    r
+   >   |
+   >   +- virtnbdbackup.1
+   >       |
+   >       +- virtnbdbackup.2
+   >           |
+   >           +- not-our-checkpoint
+
+The delta for "not our checkpoint" would never be saved because
+we dont know about this checkpoint.
+
+Now virtnbdbackup checks for checkpoints which might have been
+created by users or third party applications and exits with
+error if incremental or full backup is attempted.
+
+**Full Changelog**: https://github.com/abbbi/virtnbdbackup/compare/v0.43...v0.44
+
+Version 0.43
+---------
+Remove --checkpoint option: has never behaved the way it should. The parent
+option to a checkpoint XML definition is, according to the documentation read
+only. So currently its not supported to force a specific checkpoint using this
+option.
+
+**Full Changelog**: https://github.com/abbbi/virtnbdbackup/compare/v0.42...v0.43
+
+Version 0.42
+---------
+* Fixes some pylint/flake8 warnings.
+
+**Full Changelog**: https://github.com/abbbi/virtnbdbackup/compare/v0.41...v0.42
+
+Version 0.41
+---------
+Minor code changes regards checkpoint handling, fix some pylint warnings.
+
+**Full Changelog**: https://github.com/abbbi/virtnbdbackup/compare/v0.40...v0.41
+
+Version 0.40
+---------
+Introduce custom handler for logging facility to track number of warnings
+during backup operation.
+
+Recent changes introduce a new logging facility handler that counts the number
+of warnings during backup (for example if qemu agent is not
+reachable etc..)
+
+If option "--strict" is set during backup, the exit code will now set to
+2.
+
+This allows calling applications or scripts to have a more detailed
+error handling in regards to warnings and/or errors.
+
+**Full Changelog**: https://github.com/abbbi/virtnbdbackup/compare/v0.39...v0.40
+
+Version 0.39
+---------
+Adds full support for offline domains:
+
+* Allows for incremental backup of offline domains: changed data for last
+checkpoint will be saved until a new checkpoint is created.  * Adds proper
+error handling for cases where starting the NBD server for offline domains
+causes error
+
+**Full Changelog**: https://github.com/abbbi/virtnbdbackup/compare/v0.38...v0.39
+
+Version 0.38
+---------
+Add support for backup of shutdown domains (#27)
+
+Usually virtnbdbackup makes most sense while operating
+on running domains. Only if a virtual domain is running,
+checkpoints can be defined via libvirt API and the
+required backup operations can be executed. The qemu
+Process will then start the NBD backend in order to
+receive the backup data.
+
+With the recent changes, virtnbdbackup now detects
+if the backup source is offline and then:
+
+ * Forces the backup mode to "copy": no full or
+ incremental backup supported because we can't create
+ an checkpoint via libvirt API. Copy type backup
+ is like a full backup just without checkpoint.
+ * Forces the amount of workers to 1
+ * Starts an NBD Process via qemu-nbd for each disk, operating
+ directly on the Virtual Disk files as detected from the VM
+ configuration.
+ * Queries required extents and data from the NBD
+ Service and saves it accordingly.
+
+Full changeset:
+
+**Full Changelog**: https://github.com/abbbi/virtnbdbackup/compare/v0.36...v0.38
+
+Version 0.36
+---------
+Fix for issue #28
+Fix for issue #26 
+
+Only minor changes regards logging messages.
+
+**Full Changelog**: https://github.com/abbbi/virtnbdbackup/compare/v0.35...v0.36
+
+Version 0.35
+---------
+**Full Changelog**: https://github.com/abbbi/virtnbdbackup/compare/v0.34...v0.35
+
+Version 0.34
+---------
+Slight improvements to `virtnbdmap`.
+Show argument parameter default values in help outputs where useful.  Add
+nbdkit and python plugin to rpm/debian package dependencies.
+
+**Full Changelog**: https://github.com/abbbi/virtnbdbackup/compare/v0.33...v0.34
+
+Version 0.33
+---------
+Slight improvements for `virtnbdmap`:
+
+* add option to pass listening socket for nbdkit process
+* add option to specify export name, might be required on older versions
+
+Tests:
+
+* add test for `virtndbmap` (currently skipped on github because access to nbd
+devices not possible within docker containers.)
+
+Version 0.32
+---------
+Introduce new `virtnbdmap` utility to allow simple single file and instant recovery, see:
+
+ https://github.com/abbbi/virtnbdbackup#single-file-restore-and-instant-recovery
+
+Version 0.31
+---------
+Add documentation and update for nbdkit plugin: Its now possible to create
+single file restores or do instant recovery by booting the virtual machine
+from the thin provisioned full backups.
+
+Version 0.30
+---------
+Various bugfixes, added some small features in `virtnbdrestore`: it now
+attempts to use the original disks name for the disk files and copies the
+virtual machine config file. Fixed a few pylint warnings as well.
+
+Updated readme and improved testsuite.
+
+**Full Changelog**: https://github.com/abbbi/virtnbdbackup/compare/v0.29...v0.30
+
+Version 0.29
+---------
+Version adds support for concurrent backup of multiple disks:
+
+ https://github.com/abbbi/virtnbdbackup#backup-concurrency
+
+**Full Changelog**: https://github.com/abbbi/virtnbdbackup/compare/v0.28...v0.29
+
+Version 0.28
+---------
+Minor changes: dont attempt to re-create checkpoints during copy backup,
+changes in error handling.
+
+Version 0.27
+---------
+Minor bugfix: exit gracefully if backup to stdout is attempted in raw format:
+does not work with the new zip archive stream.
+
+Version 0.26
+---------
+Implement feature from issue #16: it is now possible to dump complete backup
+output to stdout.
+
+Version 0.25
+---------
+Fixes issue #17: Fails to restore missing checkpoints after the 11th backup
+
+
+Version 0.24
+---------
+* Small change for log format output, enclose date.
+* Code reformat.
+
+Version 0.23
+---------
+No real functional changes:
+
+ * Reformat python code with python-black to have a common code format
+
+Version 0.22
+---------
+* Support compression with `--compress` option: blocks saved in stream are lz4
+compressed, add test cases.
+* Fix checkpoint creation with `--include` option: do not create checkpoints
+for disks which are not part of include list * Various other small Bugfixes
+related to error handling
+* If backup is done to stdout, save virtual machine config to current folder.
+* Update README
+
+Version 0.21
+---------
+* Add support for backup of raw disk images during full backup using option
+`--raw`:
+
+Version 0.20
+---------
+* Add Support for backup of transient domains in cluster environments.
+* Update README
+
+Version 0.19
+---------
+* If libvirthelper failed to setup backup job because of exception, an already
+freezed guest filesystem was not thawed.
+* Fix tests.
+
+Version 0.18
+---------
+* During backup to stdout it was attempted to close non opened file handle
+resulting in backup error
+* Include used libnbd version in backup log
+* Fix some pylint warnings
+* Update README
+
+Version 0.17
+---------
+* Remove sh module from requirements, obsoleted by subprocess module
+
+Version 0.16
+---------
+* Code cleanup, fix pylint warnings
+* Update README
+
+Version 0.15
+---------
+* Minor code changes, move some functions to common class
+* Use makedirs for targetfolder to support nested target paths.
+* Updated README with more information about backup workflow.
+
+Version 0.14
+---------
+Code cleanups
+Change shebang so executables appear in process list with real name instead of
+python3 executable
+
+Version 0.13
+---------
+Write backup to partial file first
+
+In case backup utility receives signal or fails otherwise,
+the backup data is written to the regular target file and
+it is assumed everything is OK.
+
+Now virtnbdbackup writes the data to a partial file first
+and renames the file as last step. During incremental
+backup the target directory is checked for possible existence
+of partial backups and backup is aborted with error.
+
+Version 0.11
+---------
+Mostly code cleanup and pylint related warning fixes.
+
+Version 0.10
+---------
+* Allow multiple concurrent backups as NBD server is now connected via local
+unix domain socket instead of TCP, allowing unique socket file names
+* Remove dependency on sh module
+
+Version 0.8
+---------
+* Fix name in setup.py
+* Provide RPM package for download
+
+Version 0.7
+---------
+* Minor code changes, improved error and signal handling
+* Update README with common backup errors
+* Introduce and use __version__, show version in log and command output
+
+Version 0.5
+---------
+* Show progress during restore, be less verbose.
+
+Version 0.4
+---------
+* Add per disk progress bar
+
+Version 0.3
+---------
+* backup: now calls fsFreeze() and fsThaw() functions to ensure consistent
+filesystems during backup.
+
+Version 0.2
+---------
+* Fix exception in virtnbdrestore due to missing arguments
+* Scratchfile target file name is now more unique, not causing issues if
+multiple domains are backed up at the same time
+* Minor tweaks and improvements
+
+Version 0.1
+---------
+First release version with following features:
+
+* Supports Full/copy/inc backup of virtual machines
+* Skips disks and direct attached disks which do not support backup via changed block tracking
+* Creates logfile for each executed backup
+* Allows to manually exclude certain disks for backup
