@@ -1,0 +1,69 @@
+name: Bundle
+
+on:
+  schedule:
+  - cron: "0 0 * * *"
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Deploy the nightly build"
+        required: false
+        default: "false"
+
+jobs:
+  build:
+    uses: ./.github/workflows/pyinstaller-build.yml
+    with:
+      version: 'master'
+  deploy:
+    name: Deploy release
+    needs:
+      - build
+    runs-on: ubuntu-22.04
+    if: ${{ github.event_name == 'schedule' || github.event.inputs.deploy == 'true'}}
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+      - name: Delete old nightly
+        run: gh release -R angr/angr-management delete nightly --cleanup-tag --yes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        continue-on-error: true
+      - name: Make nightly release
+        run: >
+          gh release create nightly \
+            --repo angr/angr-management \
+            --title "angr management nightly preview" \
+            --notes "$RELEASE_NOTES" \
+            --prerelease \
+            --target $GITHUB_SHA \
+            $(find . -type f)
+        env:
+          RELEASE_NOTES: >
+            This release is an automatically generated pre-release. We do our
+            best to make sure everything works, but please be advised that
+            features may break or change without notice.
+
+            Mac users: Make sure to select the build that matches your CPU
+            archetecture. Both are currently not signed, so you will need to
+            right-click and select "Open" the first time you run them.
+
+          GH_TOKEN: ${{ github.token }}
+
+  report:
+    name: Report status
+    needs: deploy
+    runs-on: ubuntu-22.04
+    if: ${{ github.event_name == 'schedule' && failure() }}
+    steps:
+      - name: Send result email
+        env:
+          MAILGUN_API_TOKEN: ${{ secrets.MAILGUN_API_TOKEN }}
+        run: |
+          BUILD_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          curl -s --user "api:$MAILGUN_API_TOKEN" \
+            https://api.mailgun.net/v3/mail.rev.fish/messages \
+            -F from="angr management bundle <angr-nightly-ci@mail.rev.fish>" \
+            -F to=angr-dev@asu.edu \
+            -F subject="angr management nightly bundle failed" \
+            -F text="Link to failed build: $BUILD_URL"
