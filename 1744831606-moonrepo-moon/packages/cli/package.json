@@ -1,0 +1,42 @@
+{
+  "name": "@moonrepo/cli",
+  "version": "1.35.0",
+  "type": "commonjs",
+  "description": "moon command line and core system.",
+  "keywords": [
+    "moon",
+    "repo",
+    "cli",
+    "core"
+  ],
+  "files": [
+    "moon.js",
+    "moonx.js",
+    "postinstall.js"
+  ],
+  "author": "Miles Johnson",
+  "license": "MIT",
+  "bin": {
+    "moon": "moon.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moonrepo/moon",
+    "directory": "packages/cli"
+  },
+  "scripts": {
+    "postinstall": "node ./postinstall.js"
+  },
+  "dependencies": {
+    "detect-libc": "^2.0.3"
+  },
+  "optionalDependencies": {
+    "@moonrepo/core-linux-arm64-gnu": "1.35.0",
+    "@moonrepo/core-linux-arm64-musl": "1.35.0",
+    "@moonrepo/core-linux-x64-gnu": "1.35.0",
+    "@moonrepo/core-linux-x64-musl": "1.35.0",
+    "@moonrepo/core-macos-arm64": "1.35.0",
+    "@moonrepo/core-macos-x64": "1.35.0",
+    "@moonrepo/core-windows-x64-msvc": "1.35.0"
+  }
+}

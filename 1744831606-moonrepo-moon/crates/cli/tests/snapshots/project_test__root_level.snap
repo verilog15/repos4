@@ -1,0 +1,28 @@
+---
+source: crates/cli/tests/project_test.rs
+expression: assert.output()
+---
+About ──────────────────
+
+  Project: root
+  Alias: test-cases
+  Source: .
+  Toolchains: node, typescript
+  Language: typescript
+  Stack: unknown
+  Type: unknown
+  Depends on: —
+
+Configuation ───────────
+
+  Inherits from:
+    - .moon/tasks.yml
+  Tags: —
+  Environment variables: —
+
+Tasks ──────────────────
+
+  noop:
+    › noop
+  oneOff:
+    › echo root-one-off

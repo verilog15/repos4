@@ -1,0 +1,6 @@
+tasks:
+  test:
+    command: 'noop'
+
+  standard:
+    command: echo 'name-only'

@@ -1,0 +1,31 @@
+---
+source: crates/cli/tests/project_test.rs
+expression: assert.output_standardized()
+---
+About ──────────────────
+
+  Project: foo
+  Source: deps/foo
+  Toolchain: node
+  Language: javascript
+  Stack: unknown
+  Type: application
+  Depends on:
+    - baz (explicit, production)
+    - bar (explicit, production)
+
+Configuation ───────────
+
+  Inherits from:
+    - .moon/tasks.yml
+  Tags:
+    - react
+  Environment variables: —
+
+File groups ────────────
+
+  sources:
+    - deps/foo/src/**/*
+    - deps/foo/types/**/*
+  tests:
+    - deps/foo/tests/**/*

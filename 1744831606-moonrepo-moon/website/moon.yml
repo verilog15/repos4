@@ -1,0 +1,44 @@
+# Bump 1
+
+language: typescript
+type: application
+
+project:
+  description: 'A static website powered by Docusaurus.'
+
+dependsOn:
+  - id: 'runtime'
+    scope: 'development'
+  - id: 'types'
+    scope: 'development'
+
+tasks:
+  build:
+    description: 'Builds the Docusaurus app.'
+    command: 'docusaurus build'
+    deps:
+      - '^:build'
+    outputs:
+      - 'build'
+    options:
+      priority: high
+      shell: true
+
+  start:
+    command: 'docusaurus start'
+    deps:
+      - '^:build'
+    local: true
+
+  typecheck:
+    command: 'tsc --build --pretty'
+    inputs:
+      - '@globs(sources)'
+      - '*.js'
+      - 'tsconfig.json'
+
+workspace:
+  inheritedTasks:
+    exclude:
+      - 'build'
+      - 'typecheck'

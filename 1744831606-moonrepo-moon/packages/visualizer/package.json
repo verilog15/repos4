@@ -1,0 +1,43 @@
+{
+  "name": "@moonrepo/visualizer",
+  "version": "0.10.0",
+  "description": "A project graph and dependency graph visualizer for moon.",
+  "keywords": [
+    "moon",
+    "repo",
+    "project",
+    "dependency",
+    "graph",
+    "visualizer",
+    "interactive"
+  ],
+  "author": "Miles Johnson",
+  "contributors": [
+    "Diptesh Choudhuri"
+  ],
+  "license": "MIT",
+  "main": "dist/assets/index.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "cytoscape": "^3.31.1",
+    "cytoscape-dagre": "^2.5.0",
+    "cytoscape-klay": "^3.1.4",
+    "preact": "^10.26.4"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.1",
+    "@types/cytoscape": "^3.21.9",
+    "@types/cytoscape-dagre": "^2.3.3",
+    "@types/cytoscape-klay": "^3.1.4",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "vite": "^6.2.3",
+    "vite-plugin-css-injected-by-js": "^3.5.2"
+  }
+}

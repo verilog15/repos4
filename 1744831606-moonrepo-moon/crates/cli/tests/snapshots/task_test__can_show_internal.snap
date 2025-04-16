@@ -1,0 +1,27 @@
+---
+source: crates/cli/tests/task_test.rs
+expression: assert.output_standardized()
+---
+About ──────────────────
+
+  Target: tasks:internal
+  Project: tasks
+  Task: internal
+  Toolchains: node, typescript
+  Type: test
+  Modes: internal
+
+Process ────────────────
+
+  Command: build
+  Environment variables: —
+  Depends on: —
+  Runs dependencies: Concurrently
+  Runs in CI: Yes
+
+Configuration ──────────
+
+  Inputs:
+    - .moon/*.{pkl,yml}
+    - tasks/**/*
+  Outputs: —

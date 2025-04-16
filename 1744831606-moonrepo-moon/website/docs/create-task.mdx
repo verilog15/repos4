@@ -1,0 +1,260 @@
+---
+title: Create a task
+---
+
+import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+import NextSteps from '@site/src/components/NextSteps';
+import LangPartials from '@site/src/components/LangPartials';
+
+<HeaderLabel text="6 min" />
+
+The primary focus of moon is a task runner, and for it to operate in any capacity, it requires tasks
+to run. In moon, a task is a binary or system command that is ran as a child process within the
+context of a project (is the current working directory). Tasks are defined per project with
+[`moon.yml`](./config/project), or inherited by many projects with
+[`.moon/tasks.yml`](./config/tasks), but can also be inferred from a language's ecosystem
+([we'll talk about this later](./migrate-to-moon)).
+
+:::tip
+
+Change the language dropdown at the top right to switch the examples!
+
+:::
+
+## Configuring a task
+
+Most — if not all projects — utilize the same core tasks: linting, testing, code formatting,
+typechecking, and _building_. Because these are so universal, let's implement the build task within
+a project using [`moon.yml`](./config/project).
+
+Begin by creating the `moon.yml` file at the root of a project and add `build` to the
+[`tasks`](./config/project#tasks) field, with a [`command`](./config/project#command) parameter.
+
+import BaseBun from './__partials__/create-task/bun/base.mdx';
+import BaseDeno from './__partials__/create-task/deno/base.mdx';
+import BaseGo from './__partials__/create-task/go/base.mdx';
+import BaseNode from './__partials__/create-task/node/base.mdx';
+import BasePHP from './__partials__/create-task/php/base.mdx';
+import BasePython from './__partials__/create-task/python/base.mdx';
+import BaseRuby from './__partials__/create-task/ruby/base.mdx';
+import BaseRust from './__partials__/create-task/rust/base.mdx';
+
+<LangPartials>
+  <BaseBun key="bun" />
+  <BaseDeno key="deno" />
+  <BaseGo key="go" />
+  <BaseNode key="node" />
+  <BasePHP key="php" />
+  <BasePython key="python" />
+  <BaseRuby key="ruby" />
+  <BaseRust key="rust" />
+</LangPartials>
+
+By itself, this isn't doing much, so let's add some arguments. Arguments can also be defined with
+the [`args`](./config/project#args) setting.
+
+import ArgsBun from './__partials__/create-task/bun/args.mdx';
+import ArgsDeno from './__partials__/create-task/deno/args.mdx';
+import ArgsGo from './__partials__/create-task/go/args.mdx';
+import ArgsNode from './__partials__/create-task/node/args.mdx';
+import ArgsPHP from './__partials__/create-task/php/args.mdx';
+import ArgsPython from './__partials__/create-task/python/args.mdx';
+import ArgsRuby from './__partials__/create-task/ruby/args.mdx';
+import ArgsRust from './__partials__/create-task/rust/args.mdx';
+
+<LangPartials>
+  <ArgsBun key="bun" />
+  <ArgsDeno key="deno" />
+  <ArgsGo key="go" />
+  <ArgsNode key="node" />
+  <ArgsPHP key="php" />
+  <ArgsPython key="python" />
+  <ArgsRuby key="ruby" />
+  <ArgsRust key="rust" />
+</LangPartials>
+
+With this, the task can be ran from the command line with
+[`moon run <project>:build`](./commands/run)! This is tasks in its most simplest form, but continue
+reading on how to take full advantage of our task runner.
+
+### Inputs
+
+Our task above works, but isn't very efficient as it _always_ runs, regardless of what has changed
+since the last time it has ran. This becomes problematic in continuous integration environments, not
+just locally.
+
+To mitigate this problem, moon provides a system known as inputs, which are file paths, globs, and
+environment variables that are used by the task when it's ran. moon will use and compare these
+inputs to calculate whether to run, or to return the previous run state from the cache.
+
+If you're a bit confused, let's demonstrate this by expanding the task with the
+[`inputs`](./config/project#inputs) setting.
+
+import InputsBun from './__partials__/create-task/bun/inputs.mdx';
+import InputsDeno from './__partials__/create-task/deno/inputs.mdx';
+import InputsGo from './__partials__/create-task/go/inputs.mdx';
+import InputsNode from './__partials__/create-task/node/inputs.mdx';
+import InputsPHP from './__partials__/create-task/php/inputs.mdx';
+import InputsPython from './__partials__/create-task/python/inputs.mdx';
+import InputsRuby from './__partials__/create-task/ruby/inputs.mdx';
+import InputsRust from './__partials__/create-task/rust/inputs.mdx';
+
+<LangPartials>
+  <InputsBun key="bun" />
+  <InputsDeno key="deno" />
+  <InputsGo key="go" />
+  <InputsNode key="node" />
+  <InputsPHP key="php" />
+  <InputsPython key="python" />
+  <InputsRuby key="ruby" />
+  <InputsRust key="rust" />
+</LangPartials>
+
+This list of inputs may look complicated, but they are merely run checks. For example, when moon
+detects a change in...
+
+- Any files within the `src` folder, relative from the project's root.
+- A config file in the project's root.
+- A shared config file in the workspace root (denoted by the leading `/`).
+
+...the task will be ran! If the change occurs _outside_ of the project or _outside_ the list of
+inputs, the task will _not_ be ran.
+
+:::tip
+
+Inputs are a powerful feature that can be fine-tuned to your project's need. Be as granular or open
+as you want, the choice is yours!
+
+:::
+
+### Outputs
+
+Outputs are the opposite of [inputs](#inputs), as they are files and folders that are created as a
+result of running the task. With that being said, outputs are _optional_, as not all tasks require
+them, and the ones that do are typically build related.
+
+Now why is declaring outputs important? For incremental builds and smart caching! When moon
+encounters a build that has already been built, it hydrates all necessary outputs from the cache,
+then immediately exits. No more waiting for long builds!
+
+Continuing our example, let's route the built files and expand our task with the
+[`outputs`](./config/project#outputs) setting.
+
+import OutputsBun from './__partials__/create-task/bun/outputs.mdx';
+import OutputsDeno from './__partials__/create-task/deno/outputs.mdx';
+import OutputsGo from './__partials__/create-task/go/outputs.mdx';
+import OutputsNode from './__partials__/create-task/node/outputs.mdx';
+import OutputsPHP from './__partials__/create-task/php/outputs.mdx';
+import OutputsPython from './__partials__/create-task/python/outputs.mdx';
+import OutputsRuby from './__partials__/create-task/ruby/outputs.mdx';
+import OutputsRust from './__partials__/create-task/rust/outputs.mdx';
+
+<LangPartials>
+  <OutputsBun key="bun" />
+  <OutputsDeno key="deno" />
+  <OutputsGo key="go" />
+  <OutputsNode key="node" />
+  <OutputsPHP key="php" />
+  <OutputsPython key="python" />
+  <OutputsRuby key="ruby" />
+  <OutputsRust key="rust" />
+</LangPartials>
+
+## Depending on other tasks
+
+For scenarios where you need run a task _before_ another task, as you're expecting some repository
+state or artifact to exist, can be achieved with the [`deps`](./config/project#deps) setting, which
+requires a list of [targets](./concepts/target):
+
+- `<project>:<task>` - Full canonical target.
+- `~:<task>` or `<task>` - A task within the current project.
+- `^:<task>` - A task from all [depended on projects](./concepts/project#dependencies).
+
+```yaml title="<project>/moon.yml" {1,7,8}
+dependsOn:
+  # ...
+
+tasks:
+  build:
+    # ...
+    deps:
+      - '^:build'
+```
+
+## Using file groups
+
+Once you're familiar with configuring tasks, you may notice certain inputs being repeated
+constantly, like source files, test files, and configuration. To reduce the amount of boilerplate
+required, moon provides a feature known as [file groups](./concepts/file-group), which enables
+grouping of similar file types within a project using
+[file glob patterns or literal file paths](./concepts/file-pattern).
+
+File groups are defined with the [`fileGroups`](./config/project#filegroups) setting, which maps a
+list of file paths/globs to a group, like so.
+
+```yaml title="<project>/moon.yml"
+fileGroups:
+  configs:
+    - '*.config.js'
+  sources:
+    - 'src/**/*'
+    - 'types/**/*'
+  tests:
+    - 'tests/**/*'
+```
+
+We can then replace the inputs in our task above with these new file groups using a syntax known as
+[tokens](./concepts/token), specifically the [`@globs`](./concepts/token#globs) and
+[`@files`](./concepts/token#files) token functions. Tokens are an advanced feature, so please refer
+to their documentation for more information!
+
+import FilegroupsBun from './__partials__/create-task/bun/filegroups.mdx';
+import FilegroupsDeno from './__partials__/create-task/deno/filegroups.mdx';
+import FilegroupsGo from './__partials__/create-task/go/filegroups.mdx';
+import FilegroupsNode from './__partials__/create-task/node/filegroups.mdx';
+import FilegroupsPHP from './__partials__/create-task/php/filegroups.mdx';
+import FilegroupsPython from './__partials__/create-task/python/filegroups.mdx';
+import FilegroupsRuby from './__partials__/create-task/ruby/filegroups.mdx';
+import FilegroupsRust from './__partials__/create-task/rust/filegroups.mdx';
+
+<LangPartials>
+  <FilegroupsBun key="bun" />
+  <FilegroupsDeno key="deno" />
+  <FilegroupsGo key="go" />
+  <FilegroupsNode key="node" />
+  <FilegroupsPHP key="php" />
+  <FilegroupsPython key="python" />
+  <FilegroupsRuby key="ruby" />
+  <FilegroupsRust key="rust" />
+</LangPartials>
+
+With file groups (and tokens), you're able to reduce the amount of configuration required _and_
+encourage certain file structures for consuming projects!
+
+## Next steps
+
+<NextSteps
+  links={[
+    { icon: 'run-task', label: 'Run a task', url: './run-task' },
+    {
+      icon: 'project-config-global',
+      label: (
+        <span>
+          Configure <code>.moon/tasks.yml</code> further
+        </span>
+      ),
+      url: './config/tasks',
+    },
+    {
+      icon: 'project-config',
+      label: (
+        <span>
+          Configure <code>moon.yml</code> further
+        </span>
+      ),
+      url: './config/project',
+    },
+    { icon: 'task', label: 'Learn about tasks', url: './concepts/task' },
+    { icon: 'token', label: 'Learn about tokens', url: './concepts/token' },
+  ]}
+/>

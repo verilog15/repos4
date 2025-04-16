@@ -1,0 +1,36 @@
+{
+  "extends": [
+    "../tsconfig.options.json",
+    "@docusaurus/tsconfig"
+  ],
+  "compilerOptions": {
+    "emitDeclarationOnly": true,
+    "noEmit": false,
+    "outDir": "../.moon/cache/types/website",
+    "verbatimModuleSyntax": false,
+    "baseUrl": ".",
+    "paths": {
+      "@site/*": [
+        "./*"
+      ]
+    }
+  },
+  "include": [
+    ".eslintrc.cjs",
+    "*.config.js",
+    "*.config.ts",
+    "sidebars.ts",
+    "src/**/*"
+  ],
+  "exclude": [
+    "**/*.mdx"
+  ],
+  "references": [
+    {
+      "path": "../packages/runtime"
+    },
+    {
+      "path": "../packages/types"
+    }
+  ]
+}

@@ -1,0 +1,156 @@
+name: Rust
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # RUST_LOG: trace
+  # setup-rust
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # sccache
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  RUSTC_WRAPPER: ${{ vars.ENABLE_SCCACHE == 'true' && 'sccache' || '' }}
+  SCCACHE_BUCKET: moon-ci-sccache
+  SCCACHE_S3_KEY_PREFIX: v1
+  SCCACHE_GHA_ENABLED: ${{ vars.ENABLE_SCCACHE == 'true' }}
+  # SCCACHE_LOG: trace
+  # SCCACHE_NO_DAEMON: 1
+  SCCACHE_REGION: us-east-2
+
+jobs:
+  build-wasm:
+    name: Build WASM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: moonrepo/setup-rust@v1
+        with:
+          bins: just
+          cache: false
+          targets: wasm32-wasip1
+      - uses: mozilla-actions/sccache-action@v0.0.7
+        if: ${{ vars.ENABLE_SCCACHE == 'true' }}
+      - name: Building crates
+        run: just build-wasm
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: moonrepo/setup-rust@v1
+        with:
+          bins: just
+          cache: false
+          components: rustfmt
+      - uses: mozilla-actions/sccache-action@v0.0.7
+        if: ${{ vars.ENABLE_SCCACHE == 'true' }}
+      - name: Check formatting
+        run: just format-check
+  lint:
+    name: Lint
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: moonrepo/setup-rust@v1
+        with:
+          bins: just
+          cache: false
+          components: clippy
+      - uses: mozilla-actions/sccache-action@v0.0.7
+        if: ${{ vars.ENABLE_SCCACHE == 'true' }}
+      - name: Run linter
+        run: just lint
+  test-plan:
+    name: Test plan
+    runs-on: ubuntu-latest
+    outputs:
+      coverage: ${{ steps.plan.outputs.coverage }}
+      os: ${{ steps.plan.outputs.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        run: bash ./scripts/planTestCi.sh
+        env:
+          COVERAGE:
+            "${{ (github.event_name == 'pull_request' && contains(github.head_ref, 'develop-') ||
+            github.event_name == 'push' && github.ref_name == 'master') }}"
+  test:
+    name: Test
+    needs:
+      - test-plan
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ${{ fromJSON(needs.test-plan.outputs.os) }}
+      fail-fast: false
+    env:
+      # Windows runs out of disk space
+      COVERAGE: ${{ needs.test-plan.outputs.coverage == 'true' && !contains(matrix.os, 'windows') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: moonrepo/setup-rust@v1
+        with:
+          bins: just, cargo-nextest, cargo-llvm-cov
+          cache: false
+          components: llvm-tools-preview
+          targets: wasm32-wasip1
+      - uses: moonrepo/setup-toolchain@v0
+        with:
+          auto-install: true
+          cache: true
+          proto-version: '0.47.11' # Keep in sync
+      - uses: mozilla-actions/sccache-action@v0.0.7
+        if: ${{ vars.ENABLE_SCCACHE == 'true' }}
+      # Fixes issues where proto can't find a version because nothing is pinned globally
+      - run: cp .prototools ~/.proto/.prototools
+      - name: Build plugins
+        run: just build-wasm
+      - name: Run tests
+        if: ${{ env.COVERAGE == 'false' }}
+        run: just test-ci
+      - name: Run tests with coverage
+        if: ${{ env.COVERAGE == 'true' }}
+        run: just cov
+      - name: Generate code coverage
+        if: ${{ env.COVERAGE == 'true' }}
+        run: just gen-report
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: ${{ env.COVERAGE == 'true' }}
+        with:
+          name: coverage-${{ runner.os }}
+          path: ./report.txt
+          if-no-files-found: error
+  coverage:
+    if: ${{ needs.test-plan.outputs.coverage == 'true' }}
+    name: Code coverage
+    runs-on: ubuntu-latest
+    needs:
+      - test-plan
+      - test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        name: Download coverage reports
+        with:
+          path: coverage
+      - uses: codecov/codecov-action@v4
+        name: Upload to Codecov
+        with:
+          # files: ./coverage/coverage-Linux/report.txt,./coverage/coverage-macOS/report.txt,./coverage/coverage-Windows/report.txt
+          files: ./coverage/coverage-Linux/report.txt,./coverage/coverage-macOS/report.txt
+          flags: rust
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true

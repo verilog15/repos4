@@ -1,0 +1,18 @@
+language: javascript
+
+tags: [standard]
+
+tasks:
+  standard:
+    command: noop
+
+  dependencyOrder:
+    command: noop
+    deps:
+      - 'depsB:dependencyOrder'
+
+  # Cycle detection
+  taskCycle:
+    command: unknown
+    deps:
+      - 'depsB:taskCycle'

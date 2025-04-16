@@ -1,0 +1,65 @@
+# Trigger CI: 26
+
+$schema: '../website/static/schemas/workspace.json'
+
+projects:
+  # sources:
+  #   moon: '.'
+  sources: {}
+  globs:
+    - './packages/*'
+    - '!packages/cli'
+    - '!packages/core-*'
+    # - 'scenarios/*'
+    - 'website'
+
+generator:
+  templates:
+    # - './.moon/templates'
+    - './tests/fixtures/generator/templates'
+
+runner:
+  archivableTargets:
+    - ':lint'
+    - ':test'
+    - ':typecheck'
+  logRunningCommand: true
+
+vcs:
+  defaultBranch: 'master'
+  # hooks:
+  #   pre-commit:
+  #     - 'cargo run -- run :lint'
+
+docker:
+  scaffold:
+    include:
+      - '*.config.js'
+      - '*.json'
+
+unstable_remote:
+  # DEPOT
+  host: 'grpcs://cache.depot.dev'
+  auth:
+    token: 'DEPOT_TOKEN'
+    headers:
+      'X-Depot-Org': '1xtpjd084j'
+      'X-Depot-Project': '90xxfkst9n'
+  # BAZEL-REMOTE
+  # host: 'grpc://0.0.0.0:9092'
+  # cache:
+  #   compression: 'zstd'
+  # TLS TESTING
+  # mtls:
+  #   caCert: 'crates/remote/tests/__fixtures__/certs-local/ca.pem'
+  #   clientCert: 'crates/remote/tests/__fixtures__/certs-local/client.pem'
+  #   clientKey: 'crates/remote/tests/__fixtures__/certs-local/client.key'
+  #   domain: 'localhost'
+  # tls:
+  #   # assumeHttp2: true
+  #   cert: 'crates/remote/tests/__fixtures__/certs-local/client.pem'
+  #   domain: 'localhost'
+
+experiments:
+  fasterGlobWalk: true
+  gitV2: true

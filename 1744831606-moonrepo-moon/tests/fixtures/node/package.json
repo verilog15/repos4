@@ -1,0 +1,10 @@
+{
+  "name": "test-node",
+  "private": true,
+  "workspaces": [
+    "base",
+    "lifecycles",
+    "postinstall-recursion",
+    "version-override"
+  ]
+}

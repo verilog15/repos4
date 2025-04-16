@@ -1,0 +1,11 @@
+# https://moonrepo.dev/docs/config/template
+$schema: '{{ schema_path }}'
+
+title: 'Title'
+description: 'Description of the template.'
+variables:
+  name:
+    type: 'string'
+    default: ''
+    required: true
+    prompt: 'Package name?'

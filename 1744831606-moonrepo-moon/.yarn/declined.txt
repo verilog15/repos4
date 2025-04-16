@@ -1,0 +1,4 @@
+declined:
+  - '@moonrepo/report'
+  - '@moonrepo/runtime'
+  - website

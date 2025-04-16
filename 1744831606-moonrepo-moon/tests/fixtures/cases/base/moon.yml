@@ -1,0 +1,22 @@
+tags: [standard]
+
+tasks:
+  standard:
+    command: noop
+  runFromProject:
+    command: echo 'from project'
+    platform: system
+  runFromWorkspace:
+    command: echo 'from workspace'
+    platform: system
+    options:
+      runFromWorkspaceRoot: true
+  localOnly:
+    command: node --version
+    platform: node
+    local: true
+  internalOnly:
+    command: node --version
+    platform: node
+    options:
+      internal: true

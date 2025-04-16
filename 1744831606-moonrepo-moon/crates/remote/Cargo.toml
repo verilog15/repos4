@@ -1,0 +1,44 @@
+[package]
+name = "moon_remote"
+version = "0.0.1"
+edition = "2024"
+publish = false
+
+[dependencies]
+moon_action = { path = "../action" }
+moon_common = { path = "../common" }
+moon_config = { path = "../config" }
+moon_env_var = { path = "../env-var" }
+moon_feature_flags = { path = "../feature-flags" }
+moon_task = { path = "../task" }
+async-trait = { workspace = true }
+bazel-remote-apis = { version = "0.17.0", features = ["serde"] }
+chrono = { workspace = true }
+miette = { workspace = true }
+reqwest = { workspace = true, features = ["json", "rustls-tls"] }
+rustc-hash = { workspace = true }
+scc = { workspace = true }
+serde = { workspace = true }
+sha2 = { workspace = true }
+starbase_utils = { workspace = true, features = ["glob", "json"] }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true, features = ["io"] }
+tracing = { workspace = true }
+uuid = { workspace = true }
+zstd = "0.13.3"
+
+# gRPC
+async-stream = "0.3.6"
+http = "1.3.1"
+tonic = { version = "0.13.0", default-features = false, features = [
+    "channel",
+    "codegen",
+    "gzip",
+    "tls-aws-lc",
+    "tls-native-roots",
+] }
+tower = { version = "0.5.2", features = ["retry", "timeout"] }
+
+[lints]
+workspace = true

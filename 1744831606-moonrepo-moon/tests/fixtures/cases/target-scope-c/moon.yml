@@ -1,0 +1,6 @@
+language: javascript
+
+tasks:
+  # :scope
+  all:
+    command: echo 'scope=all'

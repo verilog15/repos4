@@ -1,0 +1,14 @@
+tasks:
+  noop:
+    command: noop
+    inputs:
+      - '*.json'
+  oneOff:
+    command: echo 'root-one-off'
+    inputs: []
+    options:
+      cache: false
+
+workspace:
+  inheritedTasks:
+    include: []

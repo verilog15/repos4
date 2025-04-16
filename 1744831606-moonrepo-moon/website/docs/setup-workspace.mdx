@@ -1,0 +1,81 @@
+---
+title: Setup workspace
+---
+
+import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+import NextSteps from '@site/src/components/NextSteps';
+
+<HeaderLabel text="2 min" />
+
+Once moon has been [installed](./install), we must setup the [workspace](./concepts/workspace),
+which is denoted by the `.moon` folder — this is known as the workspace root. The workspace is in
+charge of:
+
+- Integrating with a version control system.
+- Defining configuration that applies to its entire tree.
+- Housing [projects](./concepts/project) to build a [project graph](./how-it-works/project-graph).
+- Running tasks with the [action graph](./how-it-works/action-graph).
+
+## Initializing the repository
+
+Let's scaffold and initialize moon in a repository with the [`moon init`](./commands/init) command.
+This should typically be ran at the root, but can be nested within a directory.
+
+```shell
+$ moon init
+```
+
+When executed, the following operations will be applied.
+
+- Creates a `.moon` folder with a [`.moon/workspace.yml`](./config/workspace) configuration file.
+- Appends necessary ignore patterns to the relative `.gitignore`.
+- Infers the version control system from the environment.
+
+:::info
+
+If you're investigating moon, or merely want to prototype, you can use `moon init --minimal` to
+quickly initialize and create minimal configuration files.
+
+:::
+
+## Migrate from an existing build system
+
+Looking to migrate from Nx or Turborepo to moon? Use our
+[`moon ext migrate-nx`](./guides/extensions#migrate-nx) or
+[`moon ext migrate-turborepo`](./guides/extensions#migrate-turborepo) commands for a (somewhat)
+seamless migration!
+
+These extensions will convert your existing configuration files to moon's format as best as
+possible, but is not a requirement.
+
+## Configuring a version control system
+
+moon requires a version control system (VCS) to be present for functionality like file diffing,
+hashing, and revision comparison. The VCS and its default branch can be configured through the
+[`vcs`](./config/workspace#vcs) setting.
+
+```yaml title=".moon/workspace.yml"
+vcs:
+  manager: 'git'
+  defaultBranch: 'master'
+```
+
+> moon defaults to `git` and the settings above, so feel free to skip this.
+
+## Next steps
+
+<NextSteps
+  links={[
+    { icon: 'new-project', label: 'Create a project', url: './create-project' },
+    {
+      icon: 'workspace-config',
+      label: (
+        <span>
+          Configure <code>.moon/workspace.yml</code> further
+        </span>
+      ),
+      url: './config/workspace',
+    },
+    { icon: 'workspace', label: 'Learn about the workspace', url: './concepts/workspace' },
+  ]}
+/>

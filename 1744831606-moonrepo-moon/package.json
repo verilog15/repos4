@@ -1,0 +1,33 @@
+{
+  "name": "moon",
+  "private": true,
+  "packageManager": "yarn@4.8.0",
+  "scripts": {
+    "moon": "target/debug/moon --log trace",
+    "type": "target/debug/moon --log trace run :typecheck",
+    "clean": "rm -rf packages/*/{cjs,dist,dts,.eslintcache,tsconfig.*.tsbuildinfo}"
+  },
+  "workspaces": [
+    "packages/*",
+    "scenarios/*",
+    "website"
+  ],
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "devDependencies": {
+    "@moonrepo/cli": "workspace:*",
+    "@types/node": "^22.13.14",
+    "babel-preset-moon": "^3.1.0",
+    "eslint": "^9.23.0",
+    "eslint-config-moon": "^4.0.0",
+    "execa": "^6.1.0",
+    "jest": "^29.7.0",
+    "jest-preset-moon": "^3.1.0",
+    "packemon": "^4.1.1",
+    "prettier": "^3.5.3",
+    "prettier-config-moon": "^1.2.0",
+    "tsconfig-moon": "^1.4.0",
+    "typescript": "5.8.2"
+  }
+}

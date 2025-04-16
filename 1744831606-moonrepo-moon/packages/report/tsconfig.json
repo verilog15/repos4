@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.options.json",
+  "compilerOptions": {
+    "outDir": "../../.moon/cache/types/packages/report"
+  },
+  "include": [
+    ".eslintrc.cjs",
+    "src/**/*",
+    "tests/**/*"
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.cjs.json"
+    },
+    {
+      "path": "../types"
+    }
+  ]
+}

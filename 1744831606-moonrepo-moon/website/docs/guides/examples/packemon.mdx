@@ -1,0 +1,87 @@
+---
+title: Packemon example
+sidebar_label: Packemon
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import AddDepsTabs from '@site/src/components/AddDepsTabs';
+import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+
+<HeadingApiLink to="https://github.com/moonrepo/examples/blob/master/.moon/tasks/node.yml#L22" />
+
+In this guide, you'll learn how to integrate [Packemon](https://packemon.dev/) into moon. Packemon
+is a tool for properly building npm packages for distribution, it does this by providing the
+following functionality:
+
+- Compiles source code to popular formats: CJS, MJS, ESM, UMD, etc.
+- Validates the `package.json` for incorrect fields or values.
+- Generates `exports` mappings for `package.json` based on the define configuration.
+- And many more [optimizations and features](https://packemon.dev/docs/features)!
+
+Begin by installing `packemon` in your root. We suggest using the same version across the entire
+repository.
+
+<AddDepsTabs dep="packemon" dev />
+
+## Setup
+
+Since Packemon is per-project, the associated moon tasks should be defined in each project's
+[`moon.yml`](../../config/project) file.
+
+:::tip
+
+We suggest inheriting Packemon tasks from the
+[official moon configuration preset](https://github.com/moonrepo/moon-configs/tree/master/javascript/packemon).
+
+:::
+
+```yaml title="<project>/moon.yml"
+# Inherit tasks from the `packemon` preset
+# https://github.com/moonrepo/moon-configs
+tags: ['packemon']
+
+# Set the output formats
+tasks:
+  build:
+    outputs:
+      - 'cjs'
+```
+
+### TypeScript integration
+
+Packemon has built-in support for TypeScript, but to _not_ conflict with a
+[typecheck task](./typescript), a separate `tsconfig.json` file is required, which is named
+`tsconfig.<format>.json`.
+
+This config is necessary to _only_ compile source files, and to not include unwanted files in the
+declaration output directory.
+
+```json title="tsconfig.esm.json"
+{
+  "extends": "../../tsconfig.options.json",
+  "compilerOptions": {
+    "outDir": "esm",
+    "rootDir": "src"
+  },
+  "include": ["src/**/*"],
+  "references": []
+}
+```
+
+### Build targets
+
+To configure the target platform(s) and format(s), you must define a
+[`packemon` block](https://packemon.dev/docs/config) in the project's `package.json`. The chosen
+formats must also be listed as `outputs` in the task.
+
+```json title="package.json"
+{
+  "name": "package",
+  // ...
+  "packemon": {
+    "format": "esm",
+    "platform": "browser"
+  }
+}
+```

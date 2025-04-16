@@ -1,0 +1,72 @@
+---
+title: Vite & Vitest example
+sidebar_label: Vite & Vitest
+---
+
+import AddDepsTabs from '@site/src/components/AddDepsTabs';
+import CreateDepTabs from '@site/src/components/CreateDepTabs';
+import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+
+<HeadingApiLink to="https://github.com/moonrepo/examples/tree/master/apps/vue-vite-app" />
+
+In this guide, you'll learn how to integrate [Vite](https://vitejs.dev/) and
+[Vitest](https://vitest.dev/) into moon.
+
+Begin by creating a new Vite project in the root of an existing moon project (this should not be
+created in the workspace root, unless a polyrepo).
+
+<CreateDepTabs dep="vite" />
+
+If you plan on using Vitest, run the following command to add the `vitest` dependency to a project,
+otherwise skip to the setup section.
+
+<AddDepsTabs dep="vitest" package="<project>" dev />
+
+## Setup
+
+Since Vite is per-project, the associated moon tasks should be defined in each project's
+[`moon.yml`](../../config/project) file.
+
+:::tip
+
+We suggest inheriting Vite tasks from the
+[official moon configuration preset](https://github.com/moonrepo/moon-configs/tree/master/javascript/vite).
+
+:::
+
+```yaml title="<project>/moon.yml"
+# Inherit tasks from the `vite` and `vitest` presets
+# https://github.com/moonrepo/moon-configs
+tags: ['vite', 'vitest']
+```
+
+## Configuration
+
+### Root-level
+
+We suggest _against_ root-level configuration, as Vite should be installed per-project, and the
+`vite` command expects the configuration to live relative to the project root.
+
+### Project-level
+
+When creating a new Vite project, a [`vite.config.<js|ts>`](https://vitejs.dev/config) is created,
+and _must_ exist in the project root.
+
+```js title="<project>/vite.config.js"
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  // ...
+  build: {
+    // These must be `outputs` in the `build` task
+    outDir: 'dist',
+  },
+  test: {
+    // Vitest settings
+  },
+});
+```
+
+> If you'd prefer to configure Vitest in a
+> [separate configuration file](https://vitest.dev/guide/#configuring-vitest), create a
+> `vitest.config.<js|ts>` file.

@@ -1,0 +1,59 @@
+---
+title: File groups
+---
+
+File groups are a mechanism for grouping similar types of files and environment variables within a
+project using [file glob patterns or literal file paths](./file-pattern). These groups are then used
+by [tasks](./task) to calculate functionality like cache computation, affected files since last
+change, deterministic builds, and more.
+
+## Configuration
+
+File groups can be configured per project through [`moon.yml`](../config/project), or for many
+projects through [`.moon/tasks.yml`](../config/tasks).
+
+### Token functions
+
+File groups can be referenced in [tasks](./task) using [token functions](./token). For example, the
+`@group(name)` token will expand to all paths configured in the `sources` file group.
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    command: 'vite build'
+    inputs:
+      - '@group(sources)'
+```
+
+## Inheritance and merging
+
+When a file group of the same name exists in both [configuration files](#configuration), the
+project-level group will override the workspace-level group, and all other workspace-level groups
+will be inherited as-is.
+
+A primary scenario in which to define file groups at the project-level is when you want to
+_override_ file groups defined at the workspace-level. For example, say we want to override the
+`sources` file group because our source folder is named "lib" and not "src", we would define our
+file groups as followed.
+
+```yaml title=".moon/tasks.yml"
+fileGroups:
+  sources:
+    - 'src/**/*'
+    - 'types/**/*'
+  tests:
+    - 'tests/**/*.test.*'
+    - '**/__tests__/**/*'
+```
+
+```yaml title="moon.yml"
+fileGroups:
+  # Overrides global
+  sources:
+    - 'lib/**/*'
+    - 'types/**/*'
+  # Inherited as-is
+  tests:
+    - 'tests/**/*.test.*'
+    - '**/__tests__/**/*'
+```

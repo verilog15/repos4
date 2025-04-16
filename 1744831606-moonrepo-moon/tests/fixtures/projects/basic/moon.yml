@@ -1,0 +1,10 @@
+dependsOn:
+  - noConfig
+
+fileGroups:
+  tests:
+    - '**/*_test.rs'
+
+language: javascript
+
+tags: ['vue']

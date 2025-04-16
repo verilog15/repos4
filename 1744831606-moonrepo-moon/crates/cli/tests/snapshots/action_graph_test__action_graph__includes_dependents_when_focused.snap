@@ -1,0 +1,16 @@
+---
+source: crates/cli/tests/action_graph_test.rs
+expression: assert.output()
+---
+digraph {
+    0 [ label="SyncWorkspace" ]
+    1 [ label="SyncProject(basic)" ]
+    2 [ label="SetupToolchain(node:18.0.0)" ]
+    3 [ label="InstallWorkspaceDeps(node:18.0.0)" ]
+    4 [ label="RunTask(basic:build)" ]
+    1 -> 0 [ ]
+    2 -> 0 [ ]
+    3 -> 2 [ ]
+    4 -> 1 [ ]
+    4 -> 3 [ ]
+}

@@ -1,0 +1,127 @@
+language: javascript
+
+tasks:
+  generateFile:
+    command: node
+    args: generate.js single-file
+    inputs:
+      - '*.js'
+    outputs:
+      - 'single-file/one.js'
+  generateFiles:
+    command: node
+    args: generate.js multiple-files
+    inputs:
+      - '*.js'
+    outputs:
+      - 'multiple-files/one.js'
+      - 'multiple-files/two.js'
+  generateFolder:
+    command: node
+    args: generate.js single-folder
+    inputs:
+      - '*.js'
+    outputs:
+      - 'single-folder'
+  generateFolders:
+    command: node
+    args: generate.js multiple-folders
+    inputs:
+      - '*.js'
+    outputs:
+      - 'multiple-folders/a'
+      - 'multiple-folders/b'
+  generateFileAndFolder:
+    command: node
+    args: generate.js both
+    inputs:
+      - '*.js'
+    outputs:
+      - 'both/a/one.js'
+      - 'both/b'
+  generateFileAndFolderWorkspace:
+    command: node
+    args: generate.js both --workspace
+    inputs:
+      - '*.js'
+    outputs:
+      - '/both/a/one.js'
+      - '/both/b'
+  generateFixed:
+    command: node
+    args: generate.js custom test.cjs
+    inputs:
+      - '*.js'
+    outputs:
+      - 'custom/test.cjs'
+  generateFileTypes:
+    command: node
+    args: generate.js multiple-types
+    inputs:
+      - '*.js'
+    outputs:
+      - 'multiple-types/*.js'
+
+  # Dependency hashing
+  asDep:
+    command: node
+    args: generate.js custom test.js
+    inputs:
+      - '*.js'
+    outputs:
+      - 'custom/test.js'
+  withDeps:
+    command: node
+    args: generate.js custom test.mjs
+    deps:
+      - '~:asDep'
+    inputs:
+      - '*.mjs'
+    outputs:
+      - 'custom/test.mjs'
+
+  # Other cases
+  noCache:
+    command: node
+    args: generate.js both
+    inputs:
+      - '*.js'
+    outputs:
+      - 'both/**/*'
+    options:
+      cache: false
+  missingOutput:
+    command: node
+    args: generate.js both
+    inputs:
+      - '*.js'
+    outputs:
+      - 'unknown'
+  missingOutputGlob:
+    command: node
+    args: generate.js both
+    inputs:
+      - '*.js'
+    outputs:
+      - 'unknown/*'
+  negatedOutputGlob:
+    command: node
+    args: generate.js both
+    inputs:
+      - '*.js'
+    outputs:
+      - 'both/{a,b}/*.js'
+      - '!both/b/two.js'
+  noOutput:
+    command: node
+    args: generate.js none
+    inputs:
+      - '*.js'
+  envFile:
+    command: node
+    args: generate.js none
+    inputs:
+      - '*.js'
+      - '.env'
+    options:
+      envFile: true

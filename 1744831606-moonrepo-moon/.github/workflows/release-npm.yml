@@ -1,0 +1,25 @@
+name: Release npm
+on:
+  workflow_dispatch:
+jobs:
+  publish-npm:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    name: Publish npm packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          cache: yarn
+          check-latest: true
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Build packages
+        run: bash ./scripts/release/buildPackages.sh
+      - name: Publish npm packages
+        run: bash ./scripts/release/publishPackages.sh
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CHANNEL: latest
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

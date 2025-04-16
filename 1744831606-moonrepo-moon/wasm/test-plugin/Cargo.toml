@@ -1,0 +1,13 @@
+[package]
+name = "test_plugin"
+version = "0.0.1"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+moon_common = { workspace = true }
+moon_config = { workspace = true }
+moon_target = { workspace = true }

@@ -1,0 +1,10 @@
+language: javascript
+
+tasks:
+  build:
+    command: swc
+    args: './input.js -o ./output.js'
+    inputs:
+      - 'input.js'
+    outputs:
+      - 'output.js'
