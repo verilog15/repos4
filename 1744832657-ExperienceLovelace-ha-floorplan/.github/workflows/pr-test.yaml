@@ -1,0 +1,12 @@
+name: Test on PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+    name: Build and Test
+    uses: ./.github/workflows/common-build-test.yaml
+    with:
+      upload-artifacts: false

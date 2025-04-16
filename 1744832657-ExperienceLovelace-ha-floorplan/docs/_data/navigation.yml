@@ -1,0 +1,56 @@
+main:
+  - title: "About"
+    url: /about/
+
+  - title: "Quick Start"
+    url: /docs/quick-start/
+
+  - title: "Usage"
+    url: /docs/usage/
+
+  - title: "Examples"
+    url: /docs/examples/
+
+  - title: "Posts"
+    url: /posts/
+
+  # - title: "Categories"
+  #   url: /categories/
+
+  - title: "Tags"
+    url: /tags/
+
+  # - title: "External Link"
+  #   url: https://google.com
+
+# Documentation Sidebar
+docs:
+  - title: "Getting Started"
+    children:
+      - title: "Quick Start"
+        url: /docs/quick-start/
+      - title: "Your First SVG File"
+        url: /docs/create-svg-file/
+      - title: "Good-looking Floorplans"
+        url: /docs/create-goodlooking-floorplan/
+      - title: "Handle Size and Expand Floorplan"
+        url: /docs/how-to-handle-size-and-expand-floorplan/
+
+  - title: "Examples"
+    url: /docs/examples/
+    children:
+      - title: "Home"
+        url: /docs/example-home/
+      - title: "Light"
+        url: /docs/example-light/
+      - title: "Ring"
+        url: /docs/example-ring/
+      - title: "Remote"
+        url: /docs/example-remote/
+      - title: "Multi Floor"
+        url: /docs/example-multi-floor/
+      - title: "Floorplanner Home"
+        url: /docs/example-floorplanner-home/
+        
+  - title: Usage
+    url: /docs/usage/

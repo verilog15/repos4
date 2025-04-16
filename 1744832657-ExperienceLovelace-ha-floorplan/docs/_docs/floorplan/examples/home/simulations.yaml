@@ -1,0 +1,107 @@
+simulations:
+  - entity: sensor.wind_direction
+    states: |
+      >
+      var MIN = 0;
+      var MAX = 360;
+      var STEP = 10;
+
+      var currentLevel = entity.state ? entity.state : MIN;
+
+      var level = (currentLevel + STEP) % MAX;
+
+      return {
+        state: level,
+        duration: '25ms'
+      };
+
+  - entity: sensor.test
+    states: |
+      >
+      var MIN = 0;
+      var MAX = 100;
+      var STEP = 1;
+
+      var currentLevel = entity.attributes ? entity.attributes.level : MIN;
+      var currentIsAscending = entity.attributes ? entity.attributes.isAscending : true;
+
+      var level = (currentIsAscending && (currentLevel < MAX)) || (!currentIsAscending && (currentLevel <= MIN)) ?
+        currentLevel + STEP : currentLevel - STEP;
+
+      var isAscending = (currentIsAscending && (currentLevel >= MAX)) ? false :
+      ((!currentIsAscending && (currentLevel <= MIN)) ? true : currentIsAscending);
+
+      return {
+        state: 'on',
+        attributes: { level: level, isAscending: isAscending },
+        duration: '25ms'
+      };
+
+  - entity: sensor.moisture_level
+    states: |
+      >
+      var MIN = 0;
+      var MAX = 100;
+      var STEP = 1;
+
+      var currentLevel = entity.attributes ? entity.attributes.level : MIN;
+      var currentIsAscending = entity.attributes ? entity.attributes.isAscending : true;
+
+      var level = (currentIsAscending && (currentLevel < MAX)) || (!currentIsAscending && (currentLevel <= MIN)) ?
+        currentLevel + STEP : currentLevel - STEP;
+
+      var isAscending = (currentIsAscending && (currentLevel >= MAX)) ? false :
+      ((!currentIsAscending && (currentLevel <= MIN)) ? true : currentIsAscending);
+
+      return {
+        state: 'on',
+        attributes: { level: level, isAscending: isAscending },
+        duration: '25ms'
+      };
+
+  - entity:
+      entity_id: binary_sensor.living_area
+      state: on
+      attributes:
+        foo: bar
+    states:
+      - state: on
+        duration: 3
+      - state: off
+        duration: 2
+
+  - entity: binary_sensor.main_bedroom
+    states:
+      - state: on
+        duration: 5
+      - state: off
+        duration: 3
+
+  - entity: binary_sensor.garage
+    states:
+      - state: on
+        duration: 4
+      - state: off
+        duration: 2
+
+  - entities:
+      - light.garage
+      - light.main_bedroom
+      - switch.living_area_fan
+    states:
+      - state: on
+
+  - entity: camera.zagreb
+    states:
+      - state: idle
+        attributes:
+          entity_picture: https://cdn.whatsupcams.com/snapshot/hr_zagreb5.jpg
+        duration: 3
+      - state: idle
+        attributes:
+          entity_picture: https://cdn.whatsupcams.com/snapshot/hr_zagreb6.jpg
+        duration: 3
+      - state: idle
+        attributes:
+          entity_picture: https://cdn.whatsupcams.com/snapshot/hr_zagreb7.jpg
+        duration: 3

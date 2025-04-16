@@ -1,0 +1,72 @@
+name: Validate Pull Request
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  validate-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout base branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.base_ref }}
+
+      - name: Fetch pull request branch
+        run: |
+          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr
+          git checkout pr
+
+      - name: Check if workflows folder is modified
+        id: check-workflows
+        run: |
+          if git diff --name-only origin/${{ github.base_ref }} pr | grep -q '^.github/workflows/'; then
+            echo "workflows_modified=true" >> $GITHUB_ENV
+          else
+            echo "workflows_modified=false" >> $GITHUB_ENV
+          fi
+
+      - name: Add warning comment if workflows are modified
+        if: env.workflows_modified == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const issueNumber = context.payload.pull_request.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const labelName = "workflow-modified";
+
+            // Check if the label already exists
+            const existingLabels = await github.rest.issues.listLabelsOnIssue({
+              owner,
+              repo,
+              issue_number: issueNumber,
+            });
+
+            const labelExists = existingLabels.data.some(label => label.name === labelName);
+
+            if (!labelExists) {
+              // Add the label
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                labels: [labelName],
+              });
+
+              // Add the warning comment
+              await github.rest.issues.createComment({
+                issue_number: issueNumber,
+                owner,
+                repo,
+                body: "⚠️ Warning: This PR modifies workflow files in the `.github/workflows/` folder. Please ensure these changes are intentional and secure.",
+              });
+            }
