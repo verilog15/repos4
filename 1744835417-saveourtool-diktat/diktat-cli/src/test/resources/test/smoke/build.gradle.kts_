@@ -1,0 +1,32 @@
+import com.saveourtool.diktat.generation.docs.generateAvailableRules
+
+plugins {
+    kotlin("jvm") version "1.4.21"
+    id("com.saveourtool.diktat") version "2.0.0"
+}
+
+repositories {
+    mavenCentral()
+    maven { url = uri("https://example.com") }
+}
+
+val generateAvailableRules by tasks.register("generateAvailableRules") {
+    dependsOn("generateRulesMapping")
+    doFirst {
+        generateAvailableRules(rootDir, file("$rootDir/../wp"))
+    }
+}
+
+val updateDocumentation = tasks.register("updateDocumentation") {
+    dependsOn(
+        "generateRulesMapping",
+        "generateAvailableRules",
+        "generateFullDoc",
+        "generateCodeStyle"
+    )
+}
+
+diktat {
+    debug = true
+    inputs { include("buildSrc/**/*.kt", "*.kts") }
+}

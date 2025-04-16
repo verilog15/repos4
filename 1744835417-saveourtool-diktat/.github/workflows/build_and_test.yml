@@ -1,0 +1,215 @@
+# vim:ai et ts=2 sts=2 sw=2:
+name: Build and test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - 'master'
+
+concurrency:
+    # https://docs.github.com/en/actions/using-jobs/using-concurrency
+    # The latest queued workflow is preferred; the ones already in progress get cancelled
+    # Workflows on master branch shouldn't be cancelled, that's why they are identified by commit SHA
+    group: ${{ github.ref == 'refs/heads/master' && format('{0}-{1}', github.workflow, github.sha) || format('{0}-{1}', github.workflow, github.ref) }}
+    cancel-in-progress: true
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.daemon=true -Dorg.gradle.parallel=true -Dorg.gradle.welcome=never
+  GPG_SEC: ${{ secrets.PGP_SEC }}
+  GPG_PASSWORD: ${{ secrets.PGP_PASSWORD }}
+  OSSRH_USERNAME: ${{ secrets.SONATYPE_USER }}
+  OSSRH_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build_and_test_with_code_coverage:
+    name: Build, test and upload code coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+            # required for correct codecov upload
+            fetch-depth: 0
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: 11
+          distribution: temurin
+      - name: Retrieve Kotlin version
+        run: |
+          kv=$(cat gradle/libs.versions.toml | grep '^kotlin =' | awk -F'[=]' '{print $2}' | tr -d '" ')
+          echo KOTLIN_VERSION=$kv >> $GITHUB_ENV
+        shell: bash
+      - name: Cache konan
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-gradle-konan-${{ env.KOTLIN_VERSION }}
+      - name: Build all
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: wrapper
+          gradle-home-cache-cleanup: true
+          arguments: |
+            build
+            -x detekt
+            --scan
+            --build-cache
+
+      - name: Upload gradle reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-reports
+          path: '**/build/reports/'
+          retention-days: 1
+      - name: Code coverage report
+        uses: codecov/codecov-action@v5
+        # Do not run coverage for forks since they cannot upload the results to codecov.
+        # For reference, see:
+        # https://docs.github.com/en/actions/using-jobs/using-conditions-to-control-job-execution#example-only-run-job-for-specific-repository
+        if: github.repository == 'saveourtool/diktat'
+        with:
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  build_and_test:
+    name: Build and test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # We need multiple builds to run even if the 1st one is failing, because
+      # test failures may be OS-specific (or the tests themselves flaky).
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+
+    # A possible workaround for <https://github.com/dorny/test-reporter/issues/168>.
+    permissions:
+      checks: write
+      contents: write
+      pull-requests: write
+      statuses: write
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: 11
+          distribution: temurin
+      - name: Retrieve Kotlin version
+        run: |
+          kv=$(cat gradle/libs.versions.toml | grep '^kotlin =' | awk -F'[=]' '{print $2}' | tr -d '" ')
+          echo KOTLIN_VERSION=$kv >> $GITHUB_ENV
+        shell: bash
+      - name: Cache konan
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-gradle-konan-${{ env.KOTLIN_VERSION }}
+
+      - name: Build all
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: wrapper
+          gradle-home-cache-cleanup: true
+          arguments: |
+            build
+            -x detekt
+            --scan
+            --build-cache
+
+        # This step needs a Git repository, so it's impossible to extract it
+        # into a separate job (or, otherwise, we'd need to upload the content
+        # of the whole `.git` folder as an artifact).
+      - name: JUnit Tests (dorny/test-reporter@v1)
+        uses: dorny/test-reporter@v1
+        if: ${{ always() }}
+        with:
+          name: JUnit Tests (${{ runner.os }}, dorny/test-reporter@v1)
+          # Comma-separated values.
+          path: "**/build/test-results/*/TEST-*.xml"
+          reporter: java-junit
+        # Ignore the "Resource not accessible by integration" error when a PR
+        # originates from a non-collaborator. This is
+        # <https://github.com/dorny/test-reporter/issues/168> which may be
+        # potentially fixed with <https://github.com/dorny/test-reporter/pull/174>.
+        continue-on-error: true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: xml-test-reports-${{ runner.os }}
+          path: |
+            **/build/test-results/*/TEST-*.xml
+          retention-days: 1
+
+      - name: Upload gradle reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-test-report-${{ matrix.os }}
+          path: '**/build/reports/'
+          retention-days: 1
+
+      - name: 'Publish a snapshot to GitHub'
+        id: publish-github
+        if: ${{ github.event_name == 'push' && github.ref_type == 'branch' && github.ref == 'refs/heads/master' && github.repository == 'saveourtool/diktat' }}
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: wrapper
+          arguments: |
+            -Preckon.stage=snapshot
+            publishAllPublicationsToGitHubRepository
+
+      - name: 'Publish a snapshot to Maven Central'
+        id: publish-sonatype
+        if: ${{ github.event_name == 'push' && github.ref_type == 'branch' && github.ref == 'refs/heads/master' && github.repository == 'saveourtool/diktat' }}
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: wrapper
+          arguments: |
+            -Preckon.stage=snapshot
+            publishToSonatype
+            closeAndReleaseSonatypeStagingRepository
+
+  report:
+    name: Publish JUnit test results
+    if: ${{ always() }}
+    needs: build_and_test
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ windows-latest, macos-latest ]
+
+    permissions:
+      checks: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: xml-test-reports-${{ runner.os }}
+
+        # Uses Docker, that's why Linux-only.
+      - name: JUnit Tests (EnricoMi/publish-unit-test-result-action@v2, Linux)
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: ${{ runner.os == 'Linux' }}
+        with:
+          check_name: JUnit Tests (${{ runner.os }}, EnricoMi/publish-unit-test-result-action@v2)
+          junit_files: |
+            **/build/test-results/*/TEST-*.xml
+
+      - name: JUnit Tests (EnricoMi/publish-unit-test-result-action@v2, Windows or Mac OS X)
+        uses: EnricoMi/publish-unit-test-result-action/composite@v2
+        if: ${{ runner.os == 'Windows' || runner.os == 'macOS' }}
+        with:
+          check_name: JUnit Tests (${{ runner.os }}, EnricoMi/publish-unit-test-result-action@v2)
+          junit_files: |
+            **/build/test-results/*/TEST-*.xml

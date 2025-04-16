@@ -1,0 +1,19 @@
+target/
+.gradle/
+build/
+!ktlint/src/main/resources/config/.idea
+.idea/
+*.iml
+/examples/*/gradlew
+/examples/*/gradlew.bat
+/examples/*/gradle/wrapper/
+out/
+.DS_Store
+
+# Vim swap files
+*.swp
+
+*.sarif
+
+# a generated file for github action
+/gradle/libs.versions.toml_backup

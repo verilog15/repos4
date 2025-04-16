@@ -1,0 +1,12 @@
+plugins {
+    id "com.saveourtool.diktat" version "2.0.0"
+}
+
+repositories {
+    mavenCentral()
+}
+
+diktat {
+    inputs { it.include ("src/**/*.kt") }
+    diktatConfigFile = file(rootDir.path + "/diktat-analysis.yml")
+}

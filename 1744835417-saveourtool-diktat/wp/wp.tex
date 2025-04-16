@@ -1,0 +1,193 @@
+\documentclass[acmlarge, screen, nonacm]{acmart}
+\usepackage[utf8]{inputenc}
+\usepackage{CJKutf8}
+\usepackage{graphicx}
+\usepackage{pgf}
+\usepackage{multicol}
+\usepackage{setspace}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{placeins}
+\graphicspath{ {./images/} }
+\usepackage{tikz}
+\usepackage{verbatim}
+\usepackage{cleveref}
+\usepackage{datetime}
+\usepackage{longtable}
+
+\crefname{figure}{Figure}{Figures}
+\usetikzlibrary{trees}
+\usetikzlibrary{arrows}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\definecolor{OrangeRed}{rgb}{1,0.27,0}
+\definecolor{ForestGreen}{rgb}{0.1334,0.545,0.1334}
+\definecolor{NavyBlue}{rgb}{0,0.502,0}
+\definecolor{BurntOrange}{rgb}{0.8,0.3334,0.1334}
+\definecolor{selectColor}{rgb}{0.686,1,0.592}
+
+\newcommand\YAMLcolonstyle{\color{black}\mdseries}
+\newcommand\YAMLkeystyle{\color{BurntOrange}\bfseries}
+\newcommand\YAMLvaluestyle{\color{black}\mdseries}
+
+\lstdefinelanguage{yaml}
+{
+  keywords={true,false,null,y,n},
+  keywordstyle=\color{darkgray}\bfseries,
+  basicstyle=\YAMLkeystyle,
+  sensitive=false,
+  comment=[l]{\#},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{ForestGreen}\ttfamily,
+  stringstyle=\YAMLvaluestyle\ttfamily,
+  moredelim=[l][\color{orange}]{\&},
+  moredelim=[l][\color{magenta}]{*},
+  moredelim=**[il][\YAMLcolonstyle{:}\YAMLvaluestyle]{:},
+  morestring=[b]',
+  morestring=[b]",
+  literate =    {---}{{\ProcessThreeDashes}}3
+                {>}{{\textcolor{red}\textgreater}}1
+                {|}{{\textcolor{red}\textbar}}1
+                {\ -\ }{{\mdseries\ -\ }}3,
+}
+
+\lstdefinestyle{mystyle}{
+	backgroundcolor=\color{backcolour},
+	commentstyle=\color{codegreen},
+	keywordstyle=\color{magenta},
+	numberstyle=\tiny\color{codegray},
+	stringstyle=\color{codepurple},
+	basicstyle=\sffamily\footnotesize,
+	breakatwhitespace=false,
+	breaklines=true,
+	captionpos=b,
+	keepspaces=true,
+	numbers=left,
+	numbersep=5pt,
+	showspaces=false,
+	showstringspaces=false,
+	showtabs=false,
+	tabsize=2
+}
+
+\lstdefinelanguage{Kotlin}{
+  comment=[l]{//},
+  commentstyle={\color{gray}\ttfamily},
+  emph={delegate, filter, first, firstOrNull, forEach, lazy, map, mapNotNull, println, return@},
+  emphstyle={\color{OrangeRed}},
+  identifierstyle=\color{black},
+  keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, interface, internal, is, object, override, package, private, public, return, set, super, suspend, throw, true, try, typealias, val, var, vararg, when, where, while},
+  keywordstyle={\color{NavyBlue}\bfseries},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]",
+  morestring=[s]{"""*}{*"""},
+  ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, this, null, Int, Integer, Iterable, Long, Runnable, Short, String, Boolean},
+  ndkeywordstyle={\color{BurntOrange}\bfseries},
+  sensitive=true,
+  stringstyle={\color{ForestGreen}\ttfamily},
+}
+
+\lstset{style=mystyle}
+\settopmatter{printacmref=false}
+\settopmatter{printfolios=true}
+\setcopyright{none}
+\makeatletter
+\let\@authorsaddresses\@empty
+
+\makeatletter
+\let\newdate\@date
+
+\settopmatter{printacmref=false}
+\setcopyright{none}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\pagestyle{plain}
+
+\begin{document}
+\begin{CJK*}{UTF8}{gbsn}
+
+\title[]{
+  \includegraphics[width = 150pt, height = 150]{pictures/logo.png}\\
+  DiKTat - Kotlin linter
+}
+
+\author{Andrey Kuleshov}
+\email{andrewkuleshov7@gmail.com}
+\affiliation{
+\institution{Lomonosov Moscow State University}
+\country{Russia}
+}
+\author{Petr Trifanov}
+\email{peter.trifanov@mail.ru}
+\affiliation{
+\institution{Lomonosov Moscow State University}
+\country{Russia}
+}
+\author{Denis Kumar}
+\email{qbextted0@gmail.com}
+\affiliation{
+\institution{Higher School of Economics}
+\country{Russia}
+}
+\author{Alexander Tsay}
+\email{aktsay6@gmail.com}
+\affiliation{
+\institution{Higher School of Economics}
+\country{Russia}
+}
+
+\renewcommand{\shortauthors}{}
+
+\maketitle
+
+\section{Introduction}
+\label{sec:intro}
+\input{sections/introduction}
+
+\section{Definition}
+\label{sec:definition}
+\input{sections/definition}
+
+\section{Kotlin}
+\label{sec:kotlin}
+\input{sections/kotlin}
+
+\section{diKTat}
+\label{sec:diKTat}
+\input{sections/diKTat}
+
+\section{Comparative analysis}
+\label{sec:compare}
+\input{sections/compare}
+
+\section{How does diktat work}
+\label{sec:work}
+\input{sections/work}
+
+\section{Killer-Features}
+\label{sec:feature}
+\input{sections/feature}
+
+\section{How to use diKTat}
+\label{sec:download}
+\input{sections/download}
+
+\section{Conclusion \& Future Work}
+\label{sec:conclusion}
+\input{sections/conclusion}
+
+\newpage
+\nocite{*}
+\bibliographystyle{ieeetr}
+\bibliography{references.bib}
+
+\newpage
+\section{Appendix}
+\label{sec:appendix}
+\input{sections/appendix}
+
+\end{CJK*}
+\end{document}

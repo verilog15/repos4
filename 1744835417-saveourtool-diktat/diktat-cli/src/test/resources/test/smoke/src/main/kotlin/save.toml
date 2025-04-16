@@ -1,0 +1,14 @@
+[general]
+execCmd="java -showversion -jar diktat.jar --log-level debug"
+tags = ["smokeTest"]
+description = "SmokeTest"
+suiteName = "SmokeTest"
+language = "Kotlin"
+expectedWarningsPattern = "// ;warn:?(.*):(\\d*): (.+)"
+
+["fix and warn"]
+    ["fix and warn".fix]
+        execFlags="--mode fix"
+    ["fix and warn".warn]
+        actualWarningsPattern = "(\\w+\\..+):(\\d+):(\\d+): (\\[.*\\].*)$"
+        exactWarningsMatch = false

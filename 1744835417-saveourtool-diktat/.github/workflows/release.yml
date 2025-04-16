@@ -1,0 +1,104 @@
+name: Create diKTat release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.daemon=true -Dorg.gradle.parallel=true -Dorg.gradle.welcome=never
+  GPG_SEC: ${{ secrets.PGP_SEC }}
+  GPG_PASSWORD: ${{ secrets.PGP_PASSWORD }}
+  OSSRH_USERNAME: ${{ secrets.SONATYPE_USER }}
+  OSSRH_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  release:
+    name: 'Release'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Fetch Git tags, so that semantic version can be calculated.
+          # Alternatively, run `git fetch --prune --unshallow --tags` as the
+          # next step, see
+          # https://github.com/actions/checkout/issues/206#issuecomment-607496604.
+          fetch-depth: 0
+
+      - name: 'Set up Java'
+        uses: actions/setup-java@v4
+        with:
+          java-version: 11
+          distribution: temurin
+
+      - name: 'Calculate the release version'
+        run: |
+          echo "RELEASE_VERSION=${GITHUB_REF#'refs/tags/v'}" >> $GITHUB_ENV
+
+      - name: 'Publish a release to Maven Central'
+        id: publish-sonatype
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: wrapper
+          arguments: |
+            publishToSonatype
+            closeAndReleaseSonatypeStagingRepository
+
+      - name: 'Publish a release to Gradle Plugins'
+        id: publish-gradle
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: wrapper
+          arguments: |
+            :diktat-gradle-plugin:publishPlugins
+            -Pgradle.publish.key=${{ secrets.GRADLE_KEY }}
+            -Pgradle.publish.secret=${{ secrets.GRADLE_SECRET }}
+
+      - name: 'Publish a release to GitHub'
+        id: publish-github
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: wrapper
+          arguments: |
+            shadowExecutableJar
+            publishAllPublicationsToGitHubRepository
+      - name: 'GitHub Release'
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ env.RELEASE_VERSION }}
+          draft: false
+          prerelease: false
+      - name: Upload Diktat CLI to GitHub release
+        id: upload-release-asset-cli
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./diktat-cli/build/diktat-cli-${{ env.RELEASE_VERSION }}
+          asset_name: diktat
+          asset_content_type: application/zip
+      - name: Upload Diktat CLI for Windows to GitHub release
+        id: upload-release-asset-cli-win
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./diktat-cli/src/main/script/diktat.cmd
+          asset_name: diktat.cmd
+          asset_content_type: application/octet-stream
+      - name: Upload Diktat ruleset for KtLint to GitHub release
+        id: upload-release-asset-ruleset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./diktat-ruleset/build/libs/diktat-${{ env.RELEASE_VERSION }}.jar
+          asset_name: diktat-${{ env.RELEASE_VERSION }}.jar
+          asset_content_type: application/zip
