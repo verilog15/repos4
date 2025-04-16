@@ -1,0 +1,1266 @@
+/*******************************************************************************
+ * Copyright IBM Corp. and others 2019
+ *
+ * This program and the accompanying materials are made available under
+ * the terms of the Eclipse Public License 2.0 which accompanies this
+ * distribution and is available at https://www.eclipse.org/legal/epl-2.0/
+ * or the Apache License, Version 2.0 which accompanies this distribution and
+ * is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * This Source Code may also be made available under the following
+ * Secondary Licenses when the conditions for such availability set
+ * forth in the Eclipse Public License, v. 2.0 are satisfied: GNU
+ * General Public License, version 2 with the GNU Classpath
+ * Exception [1] and GNU General Public License, version 2 with the
+ * OpenJDK Assembly Exception [2].
+ *
+ * [1] https://www.gnu.org/software/classpath/license.html
+ * [2] https://openjdk.org/legal/assembly-exception.html
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0 OR GPL-2.0-only WITH OpenJDK-assembly-exception-1.0
+ *******************************************************************************/
+
+#include "aarch64/runtime/arm64asmdefs.inc"
+#include "j9cfg.h"
+#include "jilconsts.inc"
+
+#define J9VMTHREAD x19
+#define J9SP x20
+
+	.globl	FUNC_LABEL(_interpreterUnresolvedStaticGlue)
+	.globl	FUNC_LABEL(_interpreterUnresolvedSpecialGlue)
+	.globl	FUNC_LABEL(_interpreterUnresolvedDirectVirtualGlue)
+	.globl	FUNC_LABEL(_interpreterUnresolvedClassGlue)
+	.globl	FUNC_LABEL(_interpreterUnresolvedClassGlue2)
+	.globl	FUNC_LABEL(_interpreterUnresolvedStringGlue)
+	.globl	FUNC_LABEL(_interpreterUnresolvedMethodTypeGlue)
+	.globl	FUNC_LABEL(_interpreterUnresolvedMethodHandleGlue)
+	.globl	FUNC_LABEL(_interpreterUnresolvedCallSiteTableEntryGlue)
+	.globl	FUNC_LABEL(_interpreterUnresolvedMethodTypeTableEntryGlue)
+	.globl	FUNC_LABEL(_interpreterUnresolvedStaticDataGlue)
+	.globl	FUNC_LABEL(_interpreterUnresolvedStaticDataStoreGlue)
+	.globl	FUNC_LABEL(_interpreterUnresolvedInstanceDataGlue)
+	.globl	FUNC_LABEL(_interpreterUnresolvedInstanceDataStoreGlue)
+	.globl	FUNC_LABEL(_interpreterUnresolvedConstantDynamicGlue)
+	.globl	FUNC_LABEL(_virtualUnresolvedHelper)
+	.globl	FUNC_LABEL(_interfaceCallHelper)
+	.globl	FUNC_LABEL(_interpreterVoidStaticGlue)
+	.globl	FUNC_LABEL(_interpreterSyncVoidStaticGlue)
+	.globl	FUNC_LABEL(_interpreterIntStaticGlue)
+	.globl	FUNC_LABEL(_interpreterSyncIntStaticGlue)
+	.globl	FUNC_LABEL(_interpreterLongStaticGlue)
+	.globl	FUNC_LABEL(_interpreterSyncLongStaticGlue)
+	.globl	FUNC_LABEL(_interpreterFloatStaticGlue)
+	.globl	FUNC_LABEL(_interpreterSyncFloatStaticGlue)
+	.globl	FUNC_LABEL(_interpreterDoubleStaticGlue)
+	.globl	FUNC_LABEL(_interpreterSyncDoubleStaticGlue)
+	.globl	FUNC_LABEL(_nativeStaticHelper)
+	.globl	FUNC_LABEL(_interfaceCompleteSlot2)
+	.globl	FUNC_LABEL(_interfaceSlotsUnavailable)
+	.globl	FUNC_LABEL(_patchGCRHelper)
+
+	.extern	FUNC_LABEL(jitResolveClass)
+	.extern	FUNC_LABEL(jitResolveClassFromStaticField)
+	.extern	FUNC_LABEL(jitResolveString)
+	.extern	FUNC_LABEL(jitResolveMethodType)
+	.extern	FUNC_LABEL(jitResolveMethodHandle)
+	.extern	FUNC_LABEL(jitResolveInvokeDynamic)
+	.extern	FUNC_LABEL(jitResolveHandleMethod)
+	.extern	FUNC_LABEL(jitResolveStaticField)
+	.extern	FUNC_LABEL(jitResolveStaticFieldSetter)
+	.extern	FUNC_LABEL(jitResolveField)
+	.extern	FUNC_LABEL(jitResolveFieldSetter)
+	.extern	FUNC_LABEL(jitResolveConstantDynamic)
+	.extern	FUNC_LABEL(jitResolveVirtualMethod)
+	.extern	FUNC_LABEL(jitResolveInterfaceMethod)
+	.extern	FUNC_LABEL(jitLookupInterfaceMethod)
+	.extern	FUNC_LABEL(jitCallCFunction)
+	.extern	FUNC_LABEL(jitInstanceOf)
+	.extern	FUNC_LABEL(jitThrowException)
+	.extern	FUNC_LABEL(mcc_reservationAdjustment_unwrapper)
+	.extern	FUNC_LABEL(mcc_callPointPatching_unwrapper)
+	.extern	FUNC_LABEL(mcc_lookupHelperTrampoline_unwrapper)
+	.extern	flushICache
+
+#define SETVAL(A,B) .set A, B
+#include "runtime/Helpers.inc"
+#undef SETVAL
+
+	.set	clinit_bit,	1
+	.set	clinit_bit_number,	0
+
+// BL to PicBuilder from every snippet is always the instruction previous to LR
+
+	.set	J9TR_Snippet_CallInstruction,	-4
+
+// Static/special call snippet (and additional fields for unresolved snippet)
+
+	.set	J9TR_SCSnippet_codeCacheReturnAddress,	0
+	.set	J9TR_SCSnippet_method,		8
+	.set	J9TR_SCSnippet_lock,		16
+	.set	J9TR_USCSnippet_CP,		20
+	.set	J9TR_USCSnippet_CPIndex,	28
+
+// Encoding of CPIndex field in USC snippet (helperOffset: 8 bits, cpIndex: 56 bits)
+
+	.set	J9TR_USCSnippet_HelperOffset,	0xFF00000000000000
+	.set	J9TR_USCSnippet_HelperOffsetShift,	56
+
+// Interface call snippet
+
+	.set	J9TR_ICSnippet_codeCacheReturnAddress,	0
+	.set	J9TR_UICSnippet_CP,		8
+	.set	J9TR_UICSnippet_CPIndex,	16
+	.set	J9TR_ICSnippet_InterfaceClass,	24
+	.set	J9TR_ICSnippet_ITableIndex,	32
+	.set	J9TR_ICSnippet_FirstClass,	40
+	.set	J9TR_ICSnippet_FirstTarget,	48
+	.set	J9TR_ICSnippet_SecondClass,	56
+	.set	J9TR_ICSnippet_SecondTarget,	64
+	.set	J9TR_ICSnippet_J2IThunk,	72
+
+	.set	J9TR_ICCodeCacheRA_Sub,		-12
+	.set	J9TR_ICCodeCacheRA_BCond,	-24
+
+// Unresolved virtual call snippet
+
+	.set	J9TR_UVCSnippet_codeCacheReturnAddress,	0
+	.set	J9TR_UVCSnippet_CP,		8
+	.set	J9TR_UVCSnippet_CPIndex,	16
+	.set	J9TR_UVCSnippet_method,		24
+	.set	J9TR_UVCSnippet_J2IThunk,	32
+	.set	J9TR_UVCSnippet_lockword,	40
+
+// Unresolved data snippet
+
+	.set	J9TR_UDSnippet_codeCacheReturnAddress,	0
+	.set	J9TR_UDSnippet_CPIndex,		8
+	.set	J9TR_UDSnippet_CP,		16
+	.set	J9TR_UDSnippet_offset,		24
+	.set	J9TR_UDSnippet_template,	28
+
+	.text
+	.align 2
+
+
+#if defined(OMR_GC_COMPRESSED_POINTERS)
+#if defined(OMR_GC_FULL_POINTERS)
+#define LOAD_CLASS(dest64, dest32, src) \
+	ldr	dest64, [x19, J9TR_VMThreadCompressObjectReferences] ; \
+	cmp	dest64, 0 ; \
+	ldr	dest32, [src, J9TR_J9Object_class] ; \
+	bne	8 ; \
+	ldr	dest64, [src, J9TR_J9Object_class]
+#else /* OMR_GC_FULL_POINTERS */
+#define LOAD_CLASS(dest64, dest32, src)	ldr	dest32, [src, J9TR_J9Object_class]
+#endif /* OMR_GC_FULL_POINTERS */
+#else /* OMR_GC_COMPRESSED_POINTERS */
+#define LOAD_CLASS(dest64, dest32, src)	ldr	dest64, [src, J9TR_J9Object_class]
+#endif /* OMR_GC_COMPRESSED_POINTERS */
+
+#if defined(LINUX)
+#define START_MODIFYING_CODE	// do nothing
+#define FINISH_MODIFYING_CODE	// do nothing
+#elif defined(OSX)
+	.extern	FUNC_LABEL(pthread_jit_write_protect_np)
+	.macro	SAVE_REGS_IN_NATIVE_STACK
+	stp	x0, x1, [sp, #-144]!
+	stp	x2, x3, [sp, #16]
+	stp	x4, x5, [sp, #32]
+	stp	x6, x7, [sp, #48]
+	stp	x8, x9, [sp, #64]
+	stp	x10, x11, [sp, #80]
+	stp	x12, x13, [sp, #96]
+	stp	x14, x15, [sp, #112]
+	stp	x18, x30, [sp, #128]
+	.endm
+	.macro	RESTORE_REGS_FROM_NATIVE_STACK
+	ldp	x18, x30, [sp, #128]
+	ldp	x14, x15, [sp, #112]
+	ldp	x12, x13, [sp, #96]
+	ldp	x10, x11, [sp, #80]
+	ldp	x8, x9, [sp, #64]
+	ldp	x6, x7, [sp, #48]
+	ldp	x4, x5, [sp, #32]
+	ldp	x2, x3, [sp, #16]
+	ldp	x0, x1, [sp, #0]
+	add	sp, sp, #144
+	.endm
+	.macro	START_MODIFYING_CODE
+	SAVE_REGS_IN_NATIVE_STACK
+	mov	x0, #0
+	bl	FUNC_LABEL(pthread_jit_write_protect_np)
+	RESTORE_REGS_FROM_NATIVE_STACK
+	.endm
+	.macro	FINISH_MODIFYING_CODE
+	SAVE_REGS_IN_NATIVE_STACK
+	mov	x0, #1
+	bl	FUNC_LABEL(pthread_jit_write_protect_np)
+	RESTORE_REGS_FROM_NATIVE_STACK
+	.endm
+#else
+#error Unsupported platform
+#endif
+
+// Rewrite the distance of the specified branch instruction (BL or unconditional B)
+//
+// in:     x0  = address of branch instruction
+//         x1  = target of branch
+//         x2  = helper Index
+//         x30 = return address
+//
+// trash:	x3, x4
+
+L_refreshHelper:
+	sub	x3, x1, x0			// distance = (target - callSite)
+	sbfx	x4, x3, #0, #28
+	cmp	x3, x4
+	bne	L_outOfRange			// distance is out of +/-128MB range
+
+L_rewriteBranch:
+	sub	x3, x1, x0			// distance = (target - callSite)
+	ldr	w2, [x0]			// fetch branch instruction
+	ubfx	x1, x3, #2, #26			// distance >> 2, masking out sign bits
+	and	w2, w2, #0xFC000000		// mask out branch distance
+	orr	w2, w2, w1			// embed distance
+	START_MODIFYING_CODE
+	str	w2, [x0]			// rewrite branch instruction
+	FINISH_MODIFYING_CODE
+	mov	x1, #4				// 1 instruction to flush
+	b	flushICache
+
+// Get a new (reachable) target address for calling the helper via trampoline
+L_outOfRange:
+	sub	J9SP, J9SP, #32
+	stp	x0, x30, [J9SP, #16]		// save registers
+	stp	x0, x2, [J9SP]			// push call site addr (x0) and helper index (x2)
+	LOAD_FUNC_PTR(x0, const_mcc_lookupHelperTrampoline_unwrapper)
+	mov	x1, J9SP			// addr of the first arg for mcc_lookupHelperTrampoline_unwrapper
+	mov	x2, J9SP			// addr of the return value from mcc_lookupHelperTrampoline_unwrapper
+	bl	FUNC_LABEL(jitCallCFunction)
+	ldr	x1, [J9SP]
+	ldp	x0, x30, [J9SP, #16]		// restore registers
+	add	J9SP, J9SP, #32
+	b	L_rewriteBranch
+
+#if defined(OSX)
+	.data
+#endif
+	.align	3
+const_mcc_lookupHelperTrampoline_unwrapper:
+	.dword	FUNC_LABEL(mcc_lookupHelperTrampoline_unwrapper)
+
+// Static glue target table is laid out as:
+//
+// 00: 5 helpers
+// 40: 5 sync helpers
+
+	.set	J9TR_staticGlueTableSyncOffset,	40
+
+#if defined(OSX)
+	.data
+#endif
+	.align	3
+__staticGlueTable:
+	.dword	FUNC_LABEL(_interpreterVoidStaticGlue)
+	.dword	FUNC_LABEL(_interpreterIntStaticGlue)
+	.dword	FUNC_LABEL(_interpreterLongStaticGlue)
+	.dword	FUNC_LABEL(_interpreterFloatStaticGlue)
+	.dword	FUNC_LABEL(_interpreterDoubleStaticGlue)
+	.dword	FUNC_LABEL(_interpreterSyncVoidStaticGlue)
+	.dword	FUNC_LABEL(_interpreterSyncIntStaticGlue)
+	.dword	FUNC_LABEL(_interpreterSyncLongStaticGlue)
+	.dword	FUNC_LABEL(_interpreterSyncFloatStaticGlue)
+	.dword	FUNC_LABEL(_interpreterSyncDoubleStaticGlue)
+
+	.text
+
+// Handles calls to unresolved call snippets
+//
+// in:     x3  = address of resolve helper function
+//         x30 = snippet
+//
+// trash:	x10, x11, x12
+
+L_mergedUnresolvedSpecialStaticGlue:
+	mov	x10, x30					// save snippet address
+	ldr	x0, [x10, #J9TR_SCSnippet_codeCacheReturnAddress]	// Fetch code cache EIP
+	ldr	x1, [x10, #J9TR_USCSnippet_CP]			// get CP
+	ldr	x11, [x10, #J9TR_USCSnippet_CPIndex]		// get CP index & flags
+	and	x2, x11, #~(J9TR_USCSnippet_HelperOffset)	// remove helper offset from CP index
+	blr	x3						// call resolve helper
+	START_MODIFYING_CODE
+	str	x0, [x10, #J9TR_SCSnippet_method]		// update snippet with resolved method
+	FINISH_MODIFYING_CODE
+	and	x0, x0, #(~clinit_bit)				// clear the clinit bit in the returned address
+	mov	x2, x0						// save method (x0 trashed by following call)
+	bl	FUNC_LABEL(jitMethodIsNative)			// is the method native?
+	cbz	x0, L_notNative
+	LOAD_FUNC_PTR(x1, const_nativeStaticHelper)		// if so, use nativeStaticHelper
+	mov	x2, #TR_ARM64nativeStaticHelper
+	b	L_gotHelper					// and skip to writing the address into the instruction
+L_notNative:
+	LOAD_FUNC_PTR(x3, const_staticGlueTable)		// get helper table address
+	lsr	x1, x11, #J9TR_USCSnippet_HelperOffsetShift	// get helper offset
+	mov	x0, x2						// recover method
+	bl	FUNC_LABEL(jitMethodIsSync)			// is method synchronized?
+	lsr	x2, x11, #(J9TR_USCSnippet_HelperOffsetShift+2)	// save helper offset for refreshHelper
+	cbz	x0, L_notSync
+	add	x1, x1, #J9TR_staticGlueTableSyncOffset		// if so, adjust helper offset
+	add	x2, x2, #1
+L_notSync:
+	add	x2, x2, #TR_ARM64interpreterVoidStaticGlue
+	ldr	x1, [x3, x1]					// fetch static glue helper from table
+L_gotHelper:
+	ldr	x0, [x10, #J9TR_SCSnippet_codeCacheReturnAddress]	// Fetch code cache EIP
+	ldr	x3, [x10, #J9TR_SCSnippet_method]
+	tbnz	x3, #clinit_bit_number, L_USSGclinitCase	// branch if the LSB (the "clinit" bit) was set in the resolved address
+	ldr	x11, [x10, #J9TR_USCSnippet_CP]			// get CP
+	ldr	x12, [x10, #J9TR_USCSnippet_CPIndex]		// get CP index & flags
+	and	x12, x12, #(~J9TR_USCSnippet_HelperOffset)	// remove helper offset from CP index
+	stp	x1, x2, [J9SP, #-16]!				// save regs
+	str	x12, [J9SP, #-8]!				// push:	CP index
+	str	x11, [J9SP, #-8]!				// 		CP
+	str	x3, [J9SP, #-8]!				// 		method
+	str	x0, [J9SP, #-8]!				//
+								// prepare args for jitCallCFunction:
+	LOAD_FUNC_PTR(x0, const_mcc_reservationAdjustment_unwrapper)
+	mov	x1, J9SP
+	mov	x2, J9SP
+	bl	FUNC_LABEL(jitCallCFunction)
+	add	J9SP, J9SP, #32					// restore J9SP
+	ldp	x1, x2, [J9SP], #16				// restore regs
+	add	x0, x10, #J9TR_Snippet_CallInstruction		// get address of BL instruction in snippet
+	mov	x30, x0						// execute the BL after rewriting it
+	b	L_refreshHelper					// update branch instruction to new target
+L_USSGclinitCase:
+	mov	x30, x10					// send helpers expect link register to contain snippet return address
+	br	x1						// in <clinit> case, dispatch method directly without patching
+
+FUNC_LABEL(_interpreterUnresolvedStaticGlue):
+	LOAD_FUNC_PTR(x3, const_jitResolveStaticMethod)
+	b	L_mergedUnresolvedSpecialStaticGlue
+
+FUNC_LABEL(_interpreterUnresolvedSpecialGlue):
+	LOAD_FUNC_PTR(x3, const_jitResolveSpecialMethod)
+	b	L_mergedUnresolvedSpecialStaticGlue
+
+FUNC_LABEL(_interpreterUnresolvedDirectVirtualGlue):
+	LOAD_FUNC_PTR(x3, const_jitResolveSpecialMethod)
+	b	L_mergedUnresolvedSpecialStaticGlue
+
+#if defined(OSX)
+	.data
+#endif
+	.align	3
+const_mcc_reservationAdjustment_unwrapper:
+	.dword	FUNC_LABEL(mcc_reservationAdjustment_unwrapper)
+const_staticGlueTable:
+	.dword	__staticGlueTable
+const_nativeStaticHelper:
+	.dword	FUNC_LABEL(_nativeStaticHelper)
+const_jitResolveStaticMethod:
+	.dword	FUNC_LABEL(jitResolveStaticMethod)
+const_jitResolveSpecialMethod:
+	.dword	FUNC_LABEL(jitResolveSpecialMethod)
+
+	.text
+
+// Handles calls to unresolved data snippets
+//
+// in:		x3 = resolve helper address
+//		x30 = snippet data
+// trash:	x10, x11
+
+// mainline:
+//    b    UnresolvedDataSnippet ; change this to "movz extraReg, #0"
+//    movk extraReg, #0, LSL #16
+//    movk extraReg, #0, LSL #32
+//    movk extraReg, #0, LSL #48
+//
+L_mergedDataResolve:
+	ldr	x0, [x30, #J9TR_UDSnippet_CP]			// load CP
+	ldr	w1, [x30, #J9TR_UDSnippet_CPIndex]		// load CP index
+	ldr	x10, [x30, #J9TR_UDSnippet_codeCacheReturnAddress]	// load code cache RA
+	mov	x11, x30					// protect LR
+	add	x2, x10, #1					// increment for EX search
+	blr	x3						// call helper
+	tbnz	x0, #clinit_bit_number, L_UDclinitCase		// branch if the LSB (the "clinit" bit) was set in the resolved address
+	ldrsw	x6, [x11, #J9TR_UDSnippet_offset]		// load offset
+	add	x3, x0, x6					// add in offset to return value
+	START_MODIFYING_CODE
+	ldr	w1, [x10, #4]					// fetch the first movk instruction
+	ubfx	x2, x3, #16, #16				// bits 16-31 of the address
+	orr	w1, w1, w2, LSL #5				// encode the address in the movk instruction
+	str	w1, [x10, #4]					// store the movk instruction
+	ldr	w1, [x10, #8]					// fetch the second movk instruction
+	ubfx	x2, x3, #32, #16				// bits 32-47 of the address
+	orr	w1, w1, w2, LSL #5				// encode the address in the movk instruction
+	str	w1, [x10, #8]					// store the movk instruction
+	ldr	w1, [x10, #12]					// fetch the third movk instruction
+	ubfx	x2, x3, #48, #16				// bits 48-63 of the address
+	orr	w1, w1, w2, LSL #5				// encode the address in the movk instruction
+	str	w1, [x10, #12]					// store the movk instruction
+	ldr	w11, [x11, #J9TR_UDSnippet_template]		// load instruction template (movz)
+	ubfx	x2, x3, #0, #16					// bits 0-15 of the address
+	orr	w11, w11, w2, LSL #5				// encode the address in the movz instruction
+	add	x0, x10, 4					// address of the first movk instruction
+	mov	x1, #12						// 3 instructions to flush
+	bl	flushICache					// flush movk instructions
+	mov	x0, x10						// address of the b instruction
+	str	w11, [x0]					// store the movz instruction
+	mov	x1, #4						// 1 instruction to flush
+	bl	flushICache					// flush movz instruction
+	FINISH_MODIFYING_CODE
+	mov	x30, x10					// return address
+	ldp	x0, x1, [J9SP, #0]				// restore regs
+	ldp	x2, x3, [J9SP, #16]
+	ldp	x4, x5, [J9SP, #32]
+	ldp	x6, x7, [J9SP, #48]
+	ldp	x8, x9, [J9SP, #64]
+	ldp	x10, x11, [J9SP, #80]
+	ldp	x12, x13, [J9SP, #96]
+	ldp	x14, x15, [J9SP, #112]
+	ldp	x16, x17, [J9SP, #128]
+	ldp	x18, x19, [J9SP, #144]
+	ldr	x21, [J9SP, #168]				// not restoring J9SP
+	ldp	x22, x23, [J9SP, #176]
+	ldp	x24, x25, [J9SP, #192]
+	ldp	x26, x27, [J9SP, #208]
+	ldr	x28, [J9SP, #224]
+	add	J9SP, J9SP, #232
+	ret							// jump back to newly-written instruction sequence
+
+L_UDclinitCase:
+	and	x0, x0, #(~clinit_bit)				// clear the "clinit" bit
+	ldr	w2, [x11, #J9TR_UDSnippet_template]		// load instruction template (movz)
+	ubfx	x2, x2, #0, #5					// destination register number
+	ldrsw	x1, [x11, #J9TR_UDSnippet_offset]		// load offset
+	add	x0, x0, x1					// add the offset
+	str	x0, [J9SP, x2, LSL #3]				// store the resolved address
+	add	x30, x10, #16					// return address (skip movz/movk instructions)
+	ldp	x0, x1, [J9SP, #0]				// restore regs
+	ldp	x2, x3, [J9SP, #16]
+	ldp	x4, x5, [J9SP, #32]
+	ldp	x6, x7, [J9SP, #48]
+	ldp	x8, x9, [J9SP, #64]
+	ldp	x10, x11, [J9SP, #80]
+	ldp	x12, x13, [J9SP, #96]
+	ldp	x14, x15, [J9SP, #112]
+	ldp	x16, x17, [J9SP, #128]
+	ldp	x18, x19, [J9SP, #144]
+	ldr	x21, [J9SP, #168] // not restoring J9SP
+	ldp	x22, x23, [J9SP, #176]
+	ldp	x24, x25, [J9SP, #192]
+	ldp	x26, x27, [J9SP, #208]
+	ldr	x28, [J9SP, #224]
+	add	J9SP, J9SP, #232
+	ret
+
+FUNC_LABEL(_interpreterUnresolvedClassGlue):
+	stp	x0, x1, [J9SP, #-232]!				// save regs
+	stp	x2, x3, [J9SP, #16]
+	stp	x4, x5, [J9SP, #32]
+	stp	x6, x7, [J9SP, #48]
+	stp	x8, x9, [J9SP, #64]
+	stp	x10, x11, [J9SP, #80]
+	stp	x12, x13, [J9SP, #96]
+	stp	x14, x15, [J9SP, #112]
+	stp	x16, x17, [J9SP, #128]
+	stp	x18, x19, [J9SP, #144]
+	stp	x20, x21, [J9SP, #160]
+	stp	x22, x23, [J9SP, #176]
+	stp	x24, x25, [J9SP, #192]
+	stp	x26, x27, [J9SP, #208]
+	str	x28, [J9SP, #224]
+	LOAD_FUNC_PTR(x3, const_jitResolveClass)		// load resolve helper address
+	b	L_mergedDataResolve
+
+FUNC_LABEL(_interpreterUnresolvedClassGlue2):
+	stp	x0, x1, [J9SP, #-232]!				// save regs
+	stp	x2, x3, [J9SP, #16]
+	stp	x4, x5, [J9SP, #32]
+	stp	x6, x7, [J9SP, #48]
+	stp	x8, x9, [J9SP, #64]
+	stp	x10, x11, [J9SP, #80]
+	stp	x12, x13, [J9SP, #96]
+	stp	x14, x15, [J9SP, #112]
+	stp	x16, x17, [J9SP, #128]
+	stp	x18, x19, [J9SP, #144]
+	stp	x20, x21, [J9SP, #160]
+	stp	x22, x23, [J9SP, #176]
+	stp	x24, x25, [J9SP, #192]
+	stp	x26, x27, [J9SP, #208]
+	str	x28, [J9SP, #224]
+	LOAD_FUNC_PTR(x3, const_jitResolveClassFromStaticField)	// load resolve helper address
+	b	L_mergedDataResolve
+
+FUNC_LABEL(_interpreterUnresolvedStringGlue):
+	stp	x0, x1, [J9SP, #-232]!				// save regs
+	stp	x2, x3, [J9SP, #16]
+	stp	x4, x5, [J9SP, #32]
+	stp	x6, x7, [J9SP, #48]
+	stp	x8, x9, [J9SP, #64]
+	stp	x10, x11, [J9SP, #80]
+	stp	x12, x13, [J9SP, #96]
+	stp	x14, x15, [J9SP, #112]
+	stp	x16, x17, [J9SP, #128]
+	stp	x18, x19, [J9SP, #144]
+	stp	x20, x21, [J9SP, #160]
+	stp	x22, x23, [J9SP, #176]
+	stp	x24, x25, [J9SP, #192]
+	stp	x26, x27, [J9SP, #208]
+	str	x28, [J9SP, #224]
+	LOAD_FUNC_PTR(x3, const_jitResolveString)		// load resolve helper address
+	b	L_mergedDataResolve
+
+FUNC_LABEL(_interpreterUnresolvedMethodTypeGlue):
+	stp	x0, x1, [J9SP, #-232]!				// save regs
+	stp	x2, x3, [J9SP, #16]
+	stp	x4, x5, [J9SP, #32]
+	stp	x6, x7, [J9SP, #48]
+	stp	x8, x9, [J9SP, #64]
+	stp	x10, x11, [J9SP, #80]
+	stp	x12, x13, [J9SP, #96]
+	stp	x14, x15, [J9SP, #112]
+	stp	x16, x17, [J9SP, #128]
+	stp	x18, x19, [J9SP, #144]
+	stp	x20, x21, [J9SP, #160]
+	stp	x22, x23, [J9SP, #176]
+	stp	x24, x25, [J9SP, #192]
+	stp	x26, x27, [J9SP, #208]
+	str	x28, [J9SP, #224]
+	LOAD_FUNC_PTR(x3, const_jitResolveMethodType)		// load resolve helper address
+	b	L_mergedDataResolve
+
+FUNC_LABEL(_interpreterUnresolvedMethodHandleGlue):
+	stp	x0, x1, [J9SP, #-232]!				// save regs
+	stp	x2, x3, [J9SP, #16]
+	stp	x4, x5, [J9SP, #32]
+	stp	x6, x7, [J9SP, #48]
+	stp	x8, x9, [J9SP, #64]
+	stp	x10, x11, [J9SP, #80]
+	stp	x12, x13, [J9SP, #96]
+	stp	x14, x15, [J9SP, #112]
+	stp	x16, x17, [J9SP, #128]
+	stp	x18, x19, [J9SP, #144]
+	stp	x20, x21, [J9SP, #160]
+	stp	x22, x23, [J9SP, #176]
+	stp	x24, x25, [J9SP, #192]
+	stp	x26, x27, [J9SP, #208]
+	str	x28, [J9SP, #224]
+	LOAD_FUNC_PTR(x3, const_jitResolveMethodHandle)		// load resolve helper address
+	b	L_mergedDataResolve
+
+FUNC_LABEL(_interpreterUnresolvedCallSiteTableEntryGlue):
+	stp	x0, x1, [J9SP, #-232]!				// save regs
+	stp	x2, x3, [J9SP, #16]
+	stp	x4, x5, [J9SP, #32]
+	stp	x6, x7, [J9SP, #48]
+	stp	x8, x9, [J9SP, #64]
+	stp	x10, x11, [J9SP, #80]
+	stp	x12, x13, [J9SP, #96]
+	stp	x14, x15, [J9SP, #112]
+	stp	x16, x17, [J9SP, #128]
+	stp	x18, x19, [J9SP, #144]
+	stp	x20, x21, [J9SP, #160]
+	stp	x22, x23, [J9SP, #176]
+	stp	x24, x25, [J9SP, #192]
+	stp	x26, x27, [J9SP, #208]
+	str	x28, [J9SP, #224]
+	LOAD_FUNC_PTR(x3, const_jitResolveInvokeDynamic)	// load resolve helper address
+	b	L_mergedDataResolve
+
+FUNC_LABEL(_interpreterUnresolvedMethodTypeTableEntryGlue):
+	stp	x0, x1, [J9SP, #-232]!				// save regs
+	stp	x2, x3, [J9SP, #16]
+	stp	x4, x5, [J9SP, #32]
+	stp	x6, x7, [J9SP, #48]
+	stp	x8, x9, [J9SP, #64]
+	stp	x10, x11, [J9SP, #80]
+	stp	x12, x13, [J9SP, #96]
+	stp	x14, x15, [J9SP, #112]
+	stp	x16, x17, [J9SP, #128]
+	stp	x18, x19, [J9SP, #144]
+	stp	x20, x21, [J9SP, #160]
+	stp	x22, x23, [J9SP, #176]
+	stp	x24, x25, [J9SP, #192]
+	stp	x26, x27, [J9SP, #208]
+	str	x28, [J9SP, #224]
+	LOAD_FUNC_PTR(x3, const_jitResolveHandleMethod)		// load resolve helper address
+	b	L_mergedDataResolve
+
+FUNC_LABEL(_interpreterUnresolvedStaticDataGlue):
+	stp	x0, x1, [J9SP, #-232]!				// save regs
+	stp	x2, x3, [J9SP, #16]
+	stp	x4, x5, [J9SP, #32]
+	stp	x6, x7, [J9SP, #48]
+	stp	x8, x9, [J9SP, #64]
+	stp	x10, x11, [J9SP, #80]
+	stp	x12, x13, [J9SP, #96]
+	stp	x14, x15, [J9SP, #112]
+	stp	x16, x17, [J9SP, #128]
+	stp	x18, x19, [J9SP, #144]
+	stp	x20, x21, [J9SP, #160]
+	stp	x22, x23, [J9SP, #176]
+	stp	x24, x25, [J9SP, #192]
+	stp	x26, x27, [J9SP, #208]
+	str	x28, [J9SP, #224]
+	LOAD_FUNC_PTR(x3, const_jitResolveStaticField)		// load resolve helper address
+	b	L_mergedDataResolve
+
+FUNC_LABEL(_interpreterUnresolvedStaticDataStoreGlue):
+	stp	x0, x1, [J9SP, #-232]!				// save regs
+	stp	x2, x3, [J9SP, #16]
+	stp	x4, x5, [J9SP, #32]
+	stp	x6, x7, [J9SP, #48]
+	stp	x8, x9, [J9SP, #64]
+	stp	x10, x11, [J9SP, #80]
+	stp	x12, x13, [J9SP, #96]
+	stp	x14, x15, [J9SP, #112]
+	stp	x16, x17, [J9SP, #128]
+	stp	x18, x19, [J9SP, #144]
+	stp	x20, x21, [J9SP, #160]
+	stp	x22, x23, [J9SP, #176]
+	stp	x24, x25, [J9SP, #192]
+	stp	x26, x27, [J9SP, #208]
+	str	x28, [J9SP, #224]
+	LOAD_FUNC_PTR(x3, const_jitResolveStaticFieldSetter)	// load resolve helper address
+	b	L_mergedDataResolve
+
+FUNC_LABEL(_interpreterUnresolvedInstanceDataGlue):
+	stp	x0, x1, [J9SP, #-232]!				// save regs
+	stp	x2, x3, [J9SP, #16]
+	stp	x4, x5, [J9SP, #32]
+	stp	x6, x7, [J9SP, #48]
+	stp	x8, x9, [J9SP, #64]
+	stp	x10, x11, [J9SP, #80]
+	stp	x12, x13, [J9SP, #96]
+	stp	x14, x15, [J9SP, #112]
+	stp	x16, x17, [J9SP, #128]
+	stp	x18, x19, [J9SP, #144]
+	stp	x20, x21, [J9SP, #160]
+	stp	x22, x23, [J9SP, #176]
+	stp	x24, x25, [J9SP, #192]
+	stp	x26, x27, [J9SP, #208]
+	str	x28, [J9SP, #224]
+	LOAD_FUNC_PTR(x3, const_jitResolveField)		// load resolve helper address
+	b	L_mergedDataResolve
+
+FUNC_LABEL(_interpreterUnresolvedInstanceDataStoreGlue):
+	stp	x0, x1, [J9SP, #-232]!				// save regs
+	stp	x2, x3, [J9SP, #16]
+	stp	x4, x5, [J9SP, #32]
+	stp	x6, x7, [J9SP, #48]
+	stp	x8, x9, [J9SP, #64]
+	stp	x10, x11, [J9SP, #80]
+	stp	x12, x13, [J9SP, #96]
+	stp	x14, x15, [J9SP, #112]
+	stp	x16, x17, [J9SP, #128]
+	stp	x18, x19, [J9SP, #144]
+	stp	x20, x21, [J9SP, #160]
+	stp	x22, x23, [J9SP, #176]
+	stp	x24, x25, [J9SP, #192]
+	stp	x26, x27, [J9SP, #208]
+	str	x28, [J9SP, #224]
+	LOAD_FUNC_PTR(x3, const_jitResolveFieldSetter)		// load resolve helper address
+	b	L_mergedDataResolve
+
+FUNC_LABEL(_interpreterUnresolvedConstantDynamicGlue):
+	stp	x0, x1, [J9SP, #-232]!				// save regs
+	stp	x2, x3, [J9SP, #16]
+	stp	x4, x5, [J9SP, #32]
+	stp	x6, x7, [J9SP, #48]
+	stp	x8, x9, [J9SP, #64]
+	stp	x10, x11, [J9SP, #80]
+	stp	x12, x13, [J9SP, #96]
+	stp	x14, x15, [J9SP, #112]
+	stp	x16, x17, [J9SP, #128]
+	stp	x18, x19, [J9SP, #144]
+	stp	x20, x21, [J9SP, #160]
+	stp	x22, x23, [J9SP, #176]
+	stp	x24, x25, [J9SP, #192]
+	stp	x26, x27, [J9SP, #208]
+	str	x28, [J9SP, #224]
+	LOAD_FUNC_PTR(x3, const_jitResolveConstantDynamic)	// load resolve helper address
+	b	L_mergedDataResolve
+
+#if defined(OSX)
+	.data
+#endif
+	.align	3
+const_jitResolveClass:
+	.dword	FUNC_LABEL(jitResolveClass)
+const_jitResolveClassFromStaticField:
+	.dword	FUNC_LABEL(jitResolveClassFromStaticField)
+const_jitResolveString:
+	.dword	FUNC_LABEL(jitResolveString)
+const_jitResolveMethodType:
+	.dword	FUNC_LABEL(jitResolveMethodType)
+const_jitResolveMethodHandle:
+	.dword	FUNC_LABEL(jitResolveMethodHandle)
+const_jitResolveInvokeDynamic:
+	.dword	FUNC_LABEL(jitResolveInvokeDynamic)
+const_jitResolveHandleMethod:
+	.dword	FUNC_LABEL(jitResolveHandleMethod)
+const_jitResolveStaticField:
+	.dword	FUNC_LABEL(jitResolveStaticField)
+const_jitResolveStaticFieldSetter:
+	.dword	FUNC_LABEL(jitResolveStaticFieldSetter)
+const_jitResolveField:
+	.dword	FUNC_LABEL(jitResolveField)
+const_jitResolveFieldSetter:
+	.dword	FUNC_LABEL(jitResolveFieldSetter)
+const_jitResolveConstantDynamic:
+	.dword	FUNC_LABEL(jitResolveConstantDynamic)
+
+	.text
+
+// Handles calls to virtual unresolved call snippets
+//
+// in: x30 = snippet
+//
+// trash: x10, x11, x12
+
+// For virtual unresolved call, we generate following instructions
+//  b     VirtualUnresolvedSnippet ; change this to "movz x9, #low16bits"
+//  movk  x9, #0, LSL #16
+//  sxtw  x9, w9
+//  ldr   x9, [vftReg, x9]
+//  blr   x9
+//
+// We encode the resolved index value (signed 32 bits) into movz and movk instructions
+//
+FUNC_LABEL(_virtualUnresolvedHelper):
+	stp	x7, x6, [J9SP, #-64]!				// save parameter regs. jitWalkResolveMethodFrame assumes that argument registers are saved in this order
+	stp	x5, x4, [J9SP, #16]
+	stp	x3, x2, [J9SP, #32]
+	stp	x1, x0, [J9SP, #48]
+	ldr	x10, [x30, #J9TR_UVCSnippet_codeCacheReturnAddress]	// get code cache RA (L_commonLookupException expects it to be in x10)
+	mov	x11, x30					// protect snippet address in x11
+	ldr	x0, [x30, #J9TR_UVCSnippet_method]		// Load the J9Method
+	cbnz	x0, L_callPrivate				// If J9Method is not null, this is a prevously resolved private method
+	add	x0, x30, #J9TR_UVCSnippet_CP			// get CP/index pair pointer
+	mov	x1, x10						// code cache RA
+	bl	FUNC_LABEL(jitResolveVirtualMethod)		// resolve the method, return value = vTable offset
+	cbz	x0, L_commonLookupException			// if resolve failed, throw the exception
+	ands	x1, x0, #J9TR_J9_VTABLE_INDEX_DIRECT_METHOD_FLAG	// Check if result is tagged with J9TR_J9_VTABLE_INDEX_DIRECT_METHOD_FLAG
+	beq	L_callVirtual					// If it is not, go to the original path
+	eor	x0, x0, x1					// x1 currently equals 0x1 so this will clear the direct method flag bit
+	START_MODIFYING_CODE
+	str	x0, [x11, #J9TR_UVCSnippet_method]		// stores the J9Method for future calls to this helper
+	FINISH_MODIFYING_CODE
+L_callPrivate:
+	ldr	x1, [x0, #J9TR_MethodPCStartOffset]		// Load startPC/extra field
+	tst	x1, #J9TR_MethodNotCompiledBit			// Check to see if the method has already been compiled
+	bne	L_interpretedPrivate				// If not compiled, handle interpreted case
+	ldr     w2, [x1, #-4]					// Load the linkage info word
+	ubfx	x2, x2, #16, #16				// Extract the bits for distance to j2j entry
+	add	x2, x1, x2					// j2j address of target method
+	b	L_calloutPrivate
+L_interpretedPrivate:
+	orr	x9, x0, J9TR_J9_VTABLE_INDEX_DIRECT_METHOD_FLAG	// put tagged J9Method into x9 (for use in j2iVirtual)
+	ldr	x2, [x11, #J9TR_UVCSnippet_J2IThunk]		// Load thunk address
+L_calloutPrivate:
+	mov	x30, x10					// Set up the return addr
+	mov	x10, x2						// destination address
+	ldp	x7, x6, [J9SP, #0]				// restore parameter regs
+	ldp	x5, x4, [J9SP, #16]
+	ldp	x3, x2, [J9SP, #32]
+	ldp	x1, x0, [J9SP, #48]
+	add	J9SP, J9SP, #64
+	br	x10						// Call the target, not returning here
+L_callVirtual:
+	add	x1, x11, #J9TR_UVCSnippet_lockword		// address of the lockword
+	mov	w3, #1
+	START_MODIFYING_CODE
+	ldxr	w2, [x1]
+	cbnz	w2, L_spinForUpdate				// already locked by another thread
+	stxr	w2, w3, [x1]					// try to lock
+	cbnz	w2, L_spinForUpdate				// failed to lock
+	FINISH_MODIFYING_CODE
+	mov	x12, x0						// resolved index
+	sub	x0, x10, #16					// get the address of the movk instruction
+	START_MODIFYING_CODE
+	ldr	w1, [x0]					// fetch the movk instruction
+	ubfx	x2, x12, #16, #16				// upper 16 bits of the index
+	orr	w1, w1, w2, LSL #5				// encode the index in the movk instruction
+	str	w1, [x0]					// store the movk instruction
+	mov	x1, #4						// 1 instruction to flush
+	bl	flushICache
+	ldr	w1, const_movz_x9				// fetch movz template
+	ubfx	x12, x12, #0, #16					// lower 16 bits of the index
+	sub	x0, x10, #20					// get the address of the b instruction
+	orr	w1, w1, w12, LSL #5				// encode the index in the movz instruction
+	str	w1, [x0]					// store the movz instruction
+	mov	x1, #4						// 1 instruction to flush
+	bl	flushICache
+	mov	w0, #0
+	dmb	sy
+	str	w0, [x11, #J9TR_UVCSnippet_lockword]		// unlock
+	FINISH_MODIFYING_CODE
+L_calloutVirtual:
+	sub	x30, x10, #20					// set the movz instruction as the destination
+	ldp	x7, x6, [J9SP, #0]				// restore other parameter regs
+	ldp	x5, x4, [J9SP, #16]
+	ldp	x3, x2, [J9SP, #32]
+	ldp	x1, x0, [J9SP, #48]
+	add	J9SP, J9SP, #64
+	ret							// jump back to the movz instruction
+
+L_spinForUpdate:
+	FINISH_MODIFYING_CODE
+	ldr	w2, [x1]
+	cbnz	w2, L_spinForUpdate
+	b	L_calloutVirtual				// another thread completed rewriting instructions
+
+	.align	2
+const_movz_x9:
+	.word	0xD2800009					// template for "movz x9, #0"
+
+// Handles calls to interface call snippets
+//
+// in:     x30 = snippet
+//
+// trash:	x8, x10, x11
+//
+// At the initial state, the `bl` instruction in the Interface Call Snippet points to `_interfaceCallHelper`,
+// and PIC slots contain the following values.
+//     +---------+---------------+---------+---------------+
+//     |   -1    |snippet address|   -1    |snippet address|
+//     +---------+---------------+---------+---------------+
+//
+// After jitResolveInterfaceMethod is done, the first class cache slot is updated to 0.
+//     +---------+---------------+---------+---------------+
+//     |    0    |snippet address|   -1    |snippet address|
+//     +---------+---------------+---------+---------------+
+//
+// When the first cache slots are filled, the `bl` instruction is updated to point to `_interfaceCompleteSlot2`.
+//     +---------+---------------+---------+---------------+
+//     |  class1 |method address1|   -1    |snippet address|
+//     +---------+---------------+---------+---------------+
+//
+// Then, the second cache slots are finally filled. The `bl` instruction is updated to point to `_interfaceSlotsUnavailable`.
+//     +---------+---------------+---------+---------------+
+//     |  class1 |method address1|  class2 |method address2|
+//     +---------+---------------+---------+---------------+
+//
+FUNC_LABEL(_interfaceCallHelper):
+	stp	x7, x6, [J9SP, #-64]!				// save argument registers
+	stp	x5, x4, [J9SP, #16]
+	stp	x3, x2, [J9SP, #32]
+	stp	x1, x0, [J9SP, #48]
+	mov	x7, x30						// preserve LR
+	ldr	x10, [x30, #J9TR_ICSnippet_codeCacheReturnAddress]	// protect code cache RA in x10 (in L_commonJitDispatch, it is expected)
+
+	ldr	x0, [x30, #J9TR_ICSnippet_FirstClass]		// first cache class
+	cmp	x0, #-1
+	bne	L_continueLookup				// If first cache class is not -1, resolve is already done
+
+	ldr	x0, [x30, #J9TR_ICSnippet_ITableIndex]		// Load ITable Index
+	tst	x0, #J9TR_J9_ITABLE_OFFSET_DIRECT		// Check if J9TR_J9_ITABLE_OFFSET_DIRECT flag is set
+	beq	L_callResolve					// If not set, need to call jitResolveInterfaceMethod
+	ldr	x0, [x30, #J9TR_ICSnippet_InterfaceClass]	// Load Interface Class Pointer
+	cbnz	x0, L_typeCheckAndDirectDispatch		// If it is not null, this is a known private interface call
+L_callResolve:
+	add	x0, x30, #J9TR_UICSnippet_CP			// get CP/index pair pointer
+	mov	x1, x10						// get code cache RA
+	bl	FUNC_LABEL(jitResolveInterfaceMethod)		// call the helper
+	dmb	ishst						// make sure interface class and iTable offset are visible before `bl` instruction or first cache class is updated.
+	ldr	x0, [x7, #J9TR_ICSnippet_ITableIndex]		// Load ITable Index
+	tst	x0, #J9TR_J9_ITABLE_OFFSET_DIRECT		// Check if J9TR_J9_ITABLE_OFFSET_DIRECT flag is set
+	beq	L_callInterface					// If not set, this does not need a direct dispatch
+L_typeCheckAndDirectDispatch:
+	ldr	x0, [x7, #J9TR_ICSnippet_InterfaceClass]	// Load Interface Class Pointer
+	ldr	x1, [J9SP, #56]					// Load 'this' pointer
+	bl	FUNC_LABEL(jitInstanceOf)
+	cbnz	x0, L_directDispatchInterface			// If jitInstanceOf did not return null, continue on to direct dispatch
+	ldr	x0, [J9SP, #56]					// Load 'this' pointer
+	LOAD_CLASS(x2, w2, x0)					// Load class pointer
+	and	x0, x2, #~(J9TR_RequiredClassAlignment-1)	// mask VFT bits
+	add	x1, x7, J9TR_ICSnippet_InterfaceClass		// Address of InterfaceClass/ITableIndex pair
+	mov	x2, x10						// Load original RA for use inside jitLookupInterfaceMethod
+	bl	FUNC_LABEL(jitLookupInterfaceMethod)		// Branch to jitLookupInterfaceMethod to trigger exception
+								// The code will not return here after the branch.
+L_directDispatchInterface:
+	ldr	x0, [x7, #J9TR_ICSnippet_ITableIndex]		// Load ITable Index. This is actually a J9Method.
+	eor	x0, x0, #J9TR_J9_ITABLE_OFFSET_DIRECT		// Clear J9TR_J9_ITABLE_OFFSET_DIRECT flag.
+	ldr	x1, [x0, #J9TR_MethodPCStartOffset]		// load startPC/extra field
+	tst	x1, J9TR_MethodNotCompiledBit			// Check to see if the method has already been compiled
+	bne	L_interpretedDispatch				// If not compiled, handle interpreted case
+	ldr	w11, [x1, -4]					// Load offset of JIT-to-JIT
+	lsr	w11, w11, 16					// shift right to get the bits we want
+	add	x11, x11, x1					// Addr of JIT-to-JIT in x11
+	b	L_interfaceCallout
+L_interpretedDispatch:
+	orr	x9, x0, #J9TR_J9_VTABLE_INDEX_DIRECT_METHOD_FLAG	// put tagged J9Method in x9
+	ldr	x11, [x7, #J9TR_ICSnippet_J2IThunk]		// put thunk addr in x11
+L_interfaceCallout:
+	ldr	x0, [J9SP, #56]					// Restore 'this' pointer
+	mov	x30, x10						// set LR = code cache RA
+	ldp	x7, x6, [J9SP, #0]				// restore other parameter regs
+	ldp	x5, x4, [J9SP, #16]
+	ldp	x3, x2, [J9SP, #32]
+	ldr	x1, [J9SP, #48]
+	add	J9SP, J9SP, #64
+	br	x11						// Call: does not return here
+L_callInterface:
+	add	x6, x7, #J9TR_ICSnippet_FirstClass		// class1 address
+	START_MODIFYING_CODE
+L_loopToSetZero:
+	ldxr	x4, [x6]
+	cmp	x4, #-1
+	bne	L_exitLoopToSetZero
+	stxr	w3, xzr, [x6]
+	cbnz	w3, L_loopToSetZero
+L_exitLoopToSetZero:
+	FINISH_MODIFYING_CODE
+	b	L_continueLookup
+
+L_commonJitDispatch:
+	// Require:J9SP-8s,x10(RA),x0(voff) interpVtable offset in x0
+	mov	x9, #J9TR_InterpVTableOffset
+	sub	x9, x9, x0					// convert interp vTableIndex to jit index (must be in x9 for patch virtual)
+	mov	x30, x10					// set LR = code cache RA
+	ldr	x0, [J9SP, #56]					// refetch 'this'
+	LOAD_CLASS(x11, w11, x0)				// Load class pointer
+	and	x11, x11, #~(J9TR_RequiredClassAlignment-1)	// mask VFT bits
+
+	ldp	x7, x6, [J9SP, #0]				// restore other parameter regs
+	ldp	x5, x4, [J9SP, #16]
+	ldp	x3, x2, [J9SP, #32]
+	ldr	x1, [J9SP, #48]
+	add	J9SP, J9SP, #64
+
+	ldr	x11, [x11, x9]					// jump thru vtable
+	br	x11						// does not return here
+
+L_continueLookup:
+	ldr	x6, [J9SP, #56]					// refetch 'this'
+	add	x1, x7, J9TR_ICSnippet_InterfaceClass		// Address of interface table&slot number
+	mov	x2, x10						// code cache RA. This must be a main line address instead of snippet because interface snippets do not have GCMap.
+	LOAD_CLASS(x0, w0, x6)					// Load class pointer
+	and	x0, x0, #~(J9TR_RequiredClassAlignment-1)	// mask VFT bits
+	bl	FUNC_LABEL(jitLookupInterfaceMethod)		// call the helper
+	ldr	x5, [J9SP, #56]					// refetch 'this'
+	LOAD_CLASS(x1, w1, x5)					// Load class pointer
+	and	x1, x1, #~(J9TR_RequiredClassAlignment-1)	// mask VFT bits
+	ldr	x3, [x0, x1]					// Load method pointer
+	ldr	x2, [x3, #J9TR_MethodPCStartOffset]		// Load startPC/extra field
+	tst	x2, #J9TR_MethodNotCompiledBit			// Check to see if the method has already been compiled
+	bne	L_commonJitDispatch				// If not compiled. Require:J9SP-8s,x10(LR),x0(voff)
+	ldr	w8, [x2, -4]					// Load offset of JIT-to-JIT
+	lsr	w8, w8, 16					// shift right to get the bits we want
+	add	x8, x2, x8					// Addr of JIT-to-JIT in x8
+	add	x3, x7, #J9TR_ICSnippet_FirstClass		// class1 address
+	START_MODIFYING_CODE
+L_tryToCompleteSlot1:
+	ldxr	x4, [x3]					// either zero or class
+	cbnz	x4, L_exitTryToCompleteSlot1
+	stxr	w2, x1, [x3]					// trying to write class pointer to 1st pic slot
+	cbnz	w2, L_tryToCompleteSlot1			// failed to store
+	str	x8, [x7, #J9TR_ICSnippet_FirstTarget]		// Modify Slot1 target addr
+	dmb	ish
+	FINISH_MODIFYING_CODE
+
+	mov	x8, x0						// Preserve x0 in x8
+	add	x0, x7, #J9TR_Snippet_CallInstruction		// addr of BL instruction in snippet
+	LOAD_FUNC_PTR(x1, const_interfaceCompleteSlot2)		// Load the callee address
+	mov	x2, #TR_ARM64interfaceCompleteSlot2
+	bl	L_refreshHelper					// rewrite the BL
+
+	mov	x0, x8						// Restore x0
+	ldr	x1, [x7, J9TR_ICSnippet_FirstClass]		// Load slot1 class
+	ldr	x2, [x7, J9TR_ICSnippet_InterfaceClass]		// Resolved class
+	ldr	x3, [x1, J9TR_J9Class_classLoader]
+	ldr	x4, [x2, J9TR_J9Class_classLoader]
+	cmp	x3, x4						// Same classLoader?
+	beq	L_commonJitDispatch
+	mov	x6, #J9TR_ICSnippet_FirstClass			// slot1 class offset
+	bl	L_picRegistration
+	b	L_commonJitDispatch
+
+L_exitTryToCompleteSlot1:
+	FINISH_MODIFYING_CODE
+	b	L_commonJitDispatch
+
+FUNC_LABEL(_interfaceCompleteSlot2):
+	stp	x7, x6, [J9SP, #-64]!				// save argument registers
+	stp	x5, x4, [J9SP, #16]
+	stp	x3, x2, [J9SP, #32]
+	stp	x1, x0, [J9SP, #48]
+	mov	x7, x30						// preserve LR
+	ldr	x10, [x30, #J9TR_ICSnippet_codeCacheReturnAddress]	// protect code cache RA in x10 (in L_commonJitDispatch, it is expected)
+
+	LOAD_CLASS(x1, w1, x0)					// Load class pointer, LOAD_CLASS cannot have identical source and destination
+	and	x0, x1, #~(J9TR_RequiredClassAlignment-1)	// mask VFT bits
+	add	x1, x7, #J9TR_ICSnippet_InterfaceClass		// Address of interface info
+	mov	x2, x10						// Load code cache RA
+	bl	FUNC_LABEL(jitLookupInterfaceMethod)		// call the helper
+
+	ldr	x1, [J9SP, #56]					// refetch 'this'
+	LOAD_CLASS(x3, w3, x1)					// Load class pointer
+	and	x1, x3, #~(J9TR_RequiredClassAlignment-1)	// mask VFT bits
+
+	ldr	x3, [x0, x1]					// Load method pointer // x0 is ret val from lookup (voffset)
+	ldr	x2, [x3, #J9TR_MethodPCStartOffset]		// Load startPC/extra field
+	tst	x2, #J9TR_MethodNotCompiledBit			// Check to see if the method has already been compiled
+	bne	L_commonJitDispatch				// If not compiled. Require:J9SP-8s,x10(LR),x0(voff)
+	ldr	x4, [x7, #J9TR_ICSnippet_FirstClass]		// The same class as slot 1. We do not want to fill the second slot with it.
+	cmp	x1, x4						//
+	beq	L_commonJitDispatch
+	ldr	w8, [x2, -4]					// Load offset of JIT-to-JIT
+	lsr	w8, w8, 16					// shift right to get the bits we want
+	add	x8, x2, x8					// Addr of JIT-to-JIT in x8
+	add	x6, x7, J9TR_ICSnippet_SecondClass		// class2 address
+	START_MODIFYING_CODE
+L_tryToCompleteSlot2:
+	ldxr	x4, [x6]					// either -1 or class
+	cmp	x4, #-1
+	bne	L_exitTryToCompleteSlot2
+	stxr	w2, x1, [x6]					// trying to write class pointer to 2nd pic slot
+	cbnz	w2, L_tryToCompleteSlot2			// failed to store
+	str	x8, [x7, #J9TR_ICSnippet_SecondTarget]		// Modify Slot2 target addr
+	dmb	ish						// make the update of the pic slot become visible to other threads as soon as possible
+	FINISH_MODIFYING_CODE
+
+	mov	x8, x0						// Preserve x0 in x8
+	add	x0, x7, #J9TR_Snippet_CallInstruction		// get address of BL instruction in snippet
+	LOAD_FUNC_PTR(x1, const_interfaceSlotsUnavailable)	// address of final helper
+	mov	x2, #TR_ARM64interfaceSlotsUnavailable
+	bl	L_refreshHelper					// rewrite the BL
+
+	mov	x0, x8						// Restore x0
+	ldr	x1, [x7, J9TR_ICSnippet_SecondClass]		// Load slot2 class
+	ldr	x2, [x7, J9TR_ICSnippet_InterfaceClass]	// Resolved class
+	ldr	x3, [x1, J9TR_J9Class_classLoader]
+	ldr	x4, [x2, J9TR_J9Class_classLoader]
+	cmp	x3, x4						// Same classLoader?
+	beq	L_patchBranchInstIfLastITableCacheIsUsed	// Skip pic registration
+	mov	x6, #J9TR_ICSnippet_SecondClass			// slot2 class offset
+	bl	L_picRegistration
+
+L_patchBranchInstIfLastITableCacheIsUsed:
+	ldr	w1, [x10, J9TR_ICCodeCacheRA_Sub]		// Load instruction at 12 bytes before code cache RA
+	ldr	w2, const_InstructionLastITableCache
+	cmp	w1, w2
+	bne	L_commonJitDispatch				// If lastITableCache check is not generated, goto L_commonJitDispatch
+	ldr	w1, [x10, J9TR_ICCodeCacheRA_BCond]		// Load instruction at 24 bytes before code cache RA
+	lsr	w2, w1, #24
+	cmp	w2, 0x54					// Test if the bit 24-31 is 0x54 (b.cond)
+	and	w2, w1, #0x1f
+	ccmp	w2, #0xe, #1, eq				// Test if condition code is AL and bit 4 is 0
+	bne	L_commonJitDispatch
+
+	bfxil	w1, wzr, #0, #4					// Clear condition code
+	orr	w1, w1, #1					// Set condition code to NE
+	START_MODIFYING_CODE
+	str	w1, [x10, J9TR_ICCodeCacheRA_BCond]		// Update b.al to b.ne
+	FINISH_MODIFYING_CODE
+	mov	x8, x0						// Preserve x0 (vtable offset) in x8
+	add	x0, x10, #J9TR_ICCodeCacheRA_BCond		// Address of B.cond instruction
+	mov	x1, #4						// 1 instruction to flush
+	bl	flushICache
+	mov	x0, x8
+	b	L_commonJitDispatch
+
+const_InstructionLastITableCache:
+	sub x9, x9, x11						// The instruction to be compared
+
+L_exitTryToCompleteSlot2:
+	FINISH_MODIFYING_CODE
+	b	L_commonJitDispatch
+
+L_picRegistration:
+	// x0: vtable offset
+	// x6: offset for First/Second Class slot
+	// x10: code cache RA
+	stp	d0, d1, [J9SP, #-64]!				// save argument FPRs
+	stp	d2, d3, [J9SP, #16]
+	stp	d4, d5, [J9SP, #32]
+	stp	d6, d7, [J9SP, #48]
+	stp	x0, x10, [sp, #-32]!				// save registers to native stack which is 16 byte aligned.
+	str	x30, [sp, #16]
+	add	x1, x7, x6					// address of class slot
+	ldr	x0, [x1]					// class in the slot
+	bl	FUNC_LABEL(jitAddPicToPatchOnClassUnload)
+	ldp	x0, x10, [sp]					// restore registers
+	ldr	x30, [sp, #16]
+	add	sp, sp, #32
+	ldp	d0, d1, [J9SP, #0]				// restore argument FPRs
+	ldp	d2, d3, [J9SP, #16]
+	ldp	d4, d5, [J9SP, #32]
+	ldp	d6, d7, [J9SP, #48]
+	add	J9SP, J9SP, #64
+	ret
+
+
+FUNC_LABEL(_interfaceSlotsUnavailable):
+	stp	x7, x6, [J9SP, #-64]!				// save argument registers
+	stp	x5, x4, [J9SP, #16]
+	stp	x3, x2, [J9SP, #32]
+	stp	x1, x0, [J9SP, #48]
+	mov	x7, x30						// preserve LR
+	ldr	x10, [x30, #J9TR_ICSnippet_codeCacheReturnAddress]	// protect code cache RA in x10 (in L_commonJitDispatch, it is expected)
+
+	LOAD_CLASS(x3, w3, x0)					// Load class pointer
+	and	x0, x3, #~(J9TR_RequiredClassAlignment-1)	// mask VFT bits
+	add	x1, x7, #J9TR_ICSnippet_InterfaceClass		// Address of interface info
+	mov	x2, x10						// Load code cache RA
+	bl	FUNC_LABEL(jitLookupInterfaceMethod)		// call the helper
+	b	L_commonJitDispatch
+
+
+L_commonLookupException:
+	add	J9SP, J9SP, #64					// clean up stack but do not restore register values
+	ldr	x0, [J9VMTHREAD, #J9TR_VMThreadCurrentException]	// load pending exception from vmStruct
+	mov	x30, x10					// move correct LR in to get exception throw.
+	b	FUNC_LABEL(jitThrowException)			// throw it
+
+#if defined(OSX)
+	.data
+#endif
+	.align	3
+const_interfaceCompleteSlot2:
+	.dword	FUNC_LABEL(_interfaceCompleteSlot2)
+const_interfaceSlotsUnavailable:
+	.dword	FUNC_LABEL(_interfaceSlotsUnavailable)
+
+	.text
+
+// Handles calls to static call snippets
+//
+// in:    x1  = ptr to snippet data
+//        x30 = return address if not compiled
+//
+// out:   x0  = method
+//        x30 = code cache return address
+//
+// trash: x10, x11
+//
+L_StaticGlueCallFixer:
+	ldr	x0, [x1, #J9TR_SCSnippet_method]		// get method
+	mov	x2, x30						// save static glue return address
+	ldr	x30, [x1, #J9TR_SCSnippet_codeCacheReturnAddress]	// get code cache return address
+	tbnz	x0, #clinit_bit_number, L_SGCclinitCase		// branch if the LSB (the "clinit" bit) was set in the resolved address
+	ldr	x1, [x0, #J9TR_MethodPCStartOffset]		// get I->J start address
+	tst	x1, #J9TR_MethodNotCompiledBit
+	beq	L_StaticGlueCallFixer1				// is method now compiled?
+	ret	x2						// if not, return to static glue to call interpreter
+L_StaticGlueCallFixer1:
+	ldr	x10, [x0, #J9TR_MethodPCStartOffset]		// get I->J start address
+	sub	x11, x30, #4					// get address of BL instruction (code cache RA points to instruction following BL)
+	str	x10, [J9SP, #-8]!				// push:	addr of the callee (MethodPCStartOffset)
+	str	x11, [J9SP, #-8]!				// 		addr of BL instr
+	str	x0, [J9SP, #-8]!				// 		method
+								// prepare args for jitCallCFunction:
+	LOAD_FUNC_PTR(x0, const_mcc_callPointPatching_unwrapper)	// addr of mcc_callPointPatching_unwrapper
+	mov	x1, J9SP					// addr of the first arg for patchCallPoint
+	mov	x2, J9SP					// where to put the return value
+	bl	FUNC_LABEL(jitCallCFunction)
+	add	J9SP, J9SP, #24					// restore J9SP
+	add	x30, x11, #4					// set LR to code cache RA
+	br	x10						// jump to the I->J start address
+L_SGCclinitCase:
+	and	x0, x0, #(~clinit_bit)				// clear the "clinit" bit
+	ldr	x1, [x0, #J9TR_MethodPCStartOffset]		// get I->J start address
+	tst	x1, #J9TR_MethodNotCompiledBit
+	beq	L_SGCclinitCase1				// is method now compiled?
+	ret	x2						// if not, return to static glue to call interpreter
+L_SGCclinitCase1:
+	br	x1						// in <clinit> case, dispatch method directly without patching
+
+#if defined(OSX)
+	.data
+#endif
+	.align	3
+const_mcc_callPointPatching_unwrapper:
+	.dword	FUNC_LABEL(mcc_callPointPatching_unwrapper)
+
+	.text
+
+FUNC_LABEL(_interpreterVoidStaticGlue):
+	mov	x1, x30
+	bl	L_StaticGlueCallFixer
+	b	FUNC_LABEL(icallVMprJavaSendStatic0)
+
+FUNC_LABEL(_interpreterSyncVoidStaticGlue):
+	mov	x1, x30
+	bl	L_StaticGlueCallFixer
+	b	FUNC_LABEL(icallVMprJavaSendStaticSync0)
+
+FUNC_LABEL(_interpreterIntStaticGlue):
+	mov	x1, x30
+	bl	L_StaticGlueCallFixer
+	b	FUNC_LABEL(icallVMprJavaSendStatic1)
+
+FUNC_LABEL(_interpreterSyncIntStaticGlue):
+	mov	x1, x30
+	bl	L_StaticGlueCallFixer
+	b	FUNC_LABEL(icallVMprJavaSendStaticSync1)
+
+FUNC_LABEL(_interpreterLongStaticGlue):
+	mov	x1, x30
+	bl	L_StaticGlueCallFixer
+	b	FUNC_LABEL(icallVMprJavaSendStaticJ)
+
+FUNC_LABEL(_interpreterSyncLongStaticGlue):
+	mov	x1, x30
+	bl	L_StaticGlueCallFixer
+	b	FUNC_LABEL(icallVMprJavaSendStaticSyncJ)
+
+FUNC_LABEL(_interpreterFloatStaticGlue):
+	mov	x1, x30
+	bl	L_StaticGlueCallFixer
+	b	FUNC_LABEL(icallVMprJavaSendStaticF)
+
+FUNC_LABEL(_interpreterSyncFloatStaticGlue):
+	mov	x1, x30
+	bl	L_StaticGlueCallFixer
+	b	FUNC_LABEL(icallVMprJavaSendStaticSyncF)
+
+FUNC_LABEL(_interpreterDoubleStaticGlue):
+	mov	x1, x30
+	bl	L_StaticGlueCallFixer
+	b	FUNC_LABEL(icallVMprJavaSendStaticD)
+
+FUNC_LABEL(_interpreterSyncDoubleStaticGlue):
+	mov	x1, x30
+	bl	L_StaticGlueCallFixer
+	b	FUNC_LABEL(icallVMprJavaSendStaticSyncD)
+
+FUNC_LABEL(_nativeStaticHelper):
+	ldr	x0, [x30, #J9TR_SCSnippet_method]		// get method
+	ldr	x30, [x30, #J9TR_SCSnippet_codeCacheReturnAddress]	// get code cache return address
+	and	x0, x0, #(~clinit_bit)				// clear the "<clinit>" bit
+	b	FUNC_LABEL(icallVMprJavaSendNativeStatic)	// jump to VM helper
+
+// x0 holds address of the compare instruction
+// trashes x1
+FUNC_LABEL(_patchGCRHelper):
+	START_MODIFYING_CODE
+	ldr	w1, [x0]						// load compare instruction
+	orr	w1, w1, #2048					// set bit 11 (change immediate to 3)
+	str	w1, [x0]						// write updated compare instruction
+	FINISH_MODIFYING_CODE
+	mov	x1, #4						// 1 instruction to flush
+	b	flushICache
+
+#if defined(OSX)
+	.globl	FUNC_LABEL(_fieldWatchHelper)
+
+// Rewrite a slot in data snippet for field watch
+//
+// in:     x0  = address in data snippet
+//         x1  = value to be written
+FUNC_LABEL(_fieldWatchHelper):
+	SAVE_REGS_IN_NATIVE_STACK
+	mov	x0, #0
+	bl	FUNC_LABEL(pthread_jit_write_protect_np)
+	ldp	x0, x1, [sp]
+	str	x1, [x0]
+	mov	x1, #1
+	bl	FUNC_LABEL(pthread_jit_write_protect_np)
+	RESTORE_REGS_FROM_NATIVE_STACK
+	ret
+#endif

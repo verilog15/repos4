@@ -1,0 +1,111 @@
+/*******************************************************************************
+ * Copyright IBM Corp. and others 2021
+ *
+ * This program and the accompanying materials are made available under
+ * the terms of the Eclipse Public License 2.0 which accompanies this
+ * distribution and is available at https://www.eclipse.org/legal/epl-2.0/
+ * or the Apache License, Version 2.0 which accompanies this distribution and
+ * is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * This Source Code may also be made available under the following
+ * Secondary Licenses when the conditions for such availability set
+ * forth in the Eclipse Public License, v. 2.0 are satisfied: GNU
+ * General Public License, version 2 with the GNU Classpath
+ * Exception [1] and GNU General Public License, version 2 with the
+ * OpenJDK Assembly Exception [2].
+ *
+ * [1] https://www.gnu.org/software/classpath/license.html
+ * [2] https://openjdk.org/legal/assembly-exception.html
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0 OR GPL-2.0-only WITH OpenJDK-assembly-exception-1.0
+ *******************************************************************************/
+
+/*
+ * This file lists constants used in DDR_VM Java source code that have not
+ * always been defined. The values supplied here will apply when the blob
+ * embedded in a core file does not define the named constant.
+ *
+ * Non-comment lines must have this form:
+ *   type.constant=value
+ *
+ * The value must be understood by Long.decode(); it may be expressed in decimal
+ * or hexadecimal (0xff).
+ */
+
+CLimits.USHRT_MAX = 0xFFFF
+
+J9CfrClassFile.CFR_METHOD_EXT_HAS_SCOPED_ANNOTATION = 0
+J9CfrClassFile.CFR_METHOD_EXT_NOT_CHECKPOINT_SAFE_ANNOTATION = 0
+
+J9ConstantPool.J9CPTYPE_CONSTANT_DYNAMIC = -1
+J9ConstantPool.J9CPTYPE_INTERFACE_INSTANCE_METHOD = -1
+J9ConstantPool.J9CPTYPE_INTERFACE_STATIC_METHOD = -1
+
+J9Consts.J9_EXTENDED_RUNTIME_POSITIVE_HASHCODE = 0
+J9Consts.J9_EXTENDED_RUNTIME2_COMPRESS_OBJECT_REFERENCES = 0
+J9Consts.J9_ITABLE_INDEX_METHOD_INDEX = 0
+J9Consts.J9_ITABLE_INDEX_OBJECT = 0
+J9Consts.J9_ITABLE_INDEX_SHIFT = 0
+J9Consts.J9_ITABLE_INDEX_TAG_BITS = 0
+J9Consts.J9_ITABLE_INDEX_UNRESOLVED = 0
+J9Consts.J9_ITABLE_OFFSET_DIRECT = 0
+J9Consts.J9_ITABLE_OFFSET_TAG_BITS = 0
+J9Consts.J9_ITABLE_OFFSET_VIRTUAL = 0
+J9Consts.J9_MODULE_NAME_IS_J9UTF8 = 0
+J9Consts.PREVIEW_MINOR_VERSION = 0
+J9Consts.VALUE_TYPES_MAJOR_VERSION = 0
+
+J9DescriptionBits.J9DescriptionCpBsmIndexMask = 0
+
+J9FieldFlags.J9FieldFlagIsNullRestricted = 0
+
+J9JavaAccessFlags.J9AccClassHasIdentity = 0
+J9JavaAccessFlags.J9AccClassIsUnmodifiable = 0
+J9JavaAccessFlags.J9AccRecord = 0
+J9JavaAccessFlags.J9AccSealed = 0
+J9JavaAccessFlags.J9PutfieldNarrowing = 0
+J9JavaAccessFlags.J9StaticFieldIsNullRestricted = 0
+J9JavaAccessFlags.J9StaticFieldRefBaseType = 0
+J9JavaAccessFlags.J9StaticFieldRefBoolean = 0
+J9JavaAccessFlags.J9StaticFieldRefDouble = 0
+J9JavaAccessFlags.J9StaticFieldRefTypeBoolean = 0
+J9JavaAccessFlags.J9StaticFieldRefTypeByte = 0
+J9JavaAccessFlags.J9StaticFieldRefTypeChar = 0
+J9JavaAccessFlags.J9StaticFieldRefTypeIntFloat = 0
+J9JavaAccessFlags.J9StaticFieldRefTypeLongDouble = 0
+J9JavaAccessFlags.J9StaticFieldRefTypeMask = 0
+J9JavaAccessFlags.J9StaticFieldRefTypeObject = 0
+J9JavaAccessFlags.J9StaticFieldRefTypeShort = 0
+
+J9JavaClassFlags.J9ClassIsFlattened = 0
+J9JavaClassFlags.J9ClassIsValueType = 0
+J9JavaClassFlags.J9ClassLargestAlignmentConstraintDouble = 0
+J9JavaClassFlags.J9ClassLargestAlignmentConstraintReference = 0
+J9JavaClassFlags.J9ClassRequiresPrePadding = 0
+
+J9NonbuilderConstants.J9_ROMCLASS_OPTINFO_IMPLICITCREATION_ATTRIBUTE = 0
+J9NonbuilderConstants.J9_ROMCLASS_OPTINFO_INJECTED_INTERFACE_INFO = 0
+J9NonbuilderConstants.J9_ROMCLASS_OPTINFO_LOADABLEDESCRIPTORS_ATTRIBUTE = 0
+J9NonbuilderConstants.J9_ROMCLASS_OPTINFO_PERMITTEDSUBCLASSES_ATTRIBUTE = 0
+J9NonbuilderConstants.J9_ROMCLASS_OPTINFO_RECORD_ATTRIBUTE = 0
+
+J9Object.OBJECT_HEADER_LOCK_LEARNING = 0
+J9Object.OBJECT_HEADER_LOCK_LEARNING_RECURSION_OFFSET = 0
+J9Object.OBJECT_HEADER_LOCK_V2_RECURSION_OFFSET = 0
+
+J9PortLibrary.OMRPORT_SIG_FLAG_SIGUSR2 = 0
+
+J9RASdumpAgent.J9RAS_DUMP_ON_USER2_SIGNAL = 0
+
+J9RecordComponentFlags.J9RecordComponentFlagHasAnnotations = 0
+J9RecordComponentFlags.J9RecordComponentFlagHasGenericSignature = 0
+J9RecordComponentFlags.J9RecordComponentFlagHasTypeAnnotations = 0
+
+J9ROMFieldOffsetWalkState.J9VM_FIELD_OFFSET_WALK_BACKFILL_FLAT_OBJECT_FIELD = 0
+J9ROMFieldOffsetWalkState.J9VM_FIELD_OFFSET_WALK_BACKFILL_FLAT_SINGLE_FIELD = 0
+
+MM_ForwardedHeader.OMR_FORWARDED_TAG_MASK = 0
+
+ShcdatatypesConstants.TYPE_PREREQ_CACHE = -1
+
+ShCFlags.J9SHR_DATA_TYPE_STARTUP_HINTS = -1

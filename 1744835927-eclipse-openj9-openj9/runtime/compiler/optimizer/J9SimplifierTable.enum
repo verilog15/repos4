@@ -1,0 +1,125 @@
+/*******************************************************************************
+ * Copyright IBM Corp. and others 2000
+ *
+ * This program and the accompanying materials are made available under
+ * the terms of the Eclipse Public License 2.0 which accompanies this
+ * distribution and is available at https://www.eclipse.org/legal/epl-2.0/
+ * or the Apache License, Version 2.0 which accompanies this distribution and
+ * is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * This Source Code may also be made available under the following
+ * Secondary Licenses when the conditions for such availability set
+ * forth in the Eclipse Public License, v. 2.0 are satisfied: GNU
+ * General Public License, version 2 with the GNU Classpath
+ * Exception [1] and GNU General Public License, version 2 with the
+ * OpenJDK Assembly Exception [2].
+ *
+ * [1] https://www.gnu.org/software/classpath/license.html
+ * [2] https://openjdk.org/legal/assembly-exception.html
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0 OR GPL-2.0-only WITH OpenJDK-assembly-exception-1.0
+ *******************************************************************************/
+
+#ifndef J9_SIMPLIFIERTABLE_ENUM_INCL
+#define J9_SIMPLIFIERTABLE_ENUM_INCL
+
+#define zdloadSimplifierHandler zdloadSimplifier
+#define zdloadiSimplifierHandler zdloadSimplifier
+#define zdstoreSimplifierHandler pdstoreSimplifier
+#define zdstoreiSimplifierHandler pdstoreSimplifier
+#define pd2zdSimplifierHandler pd2zdSimplifier
+#define zd2pdSimplifierHandler zd2pdSimplifier
+#define zdsleLoadSimplifierHandler dftSimplifier
+#define zdslsLoadSimplifierHandler dftSimplifier
+#define zdstsLoadSimplifierHandler dftSimplifier
+#define zdsleLoadiSimplifierHandler dftSimplifier
+#define zdslsLoadiSimplifierHandler dftSimplifier
+#define zdstsLoadiSimplifierHandler dftSimplifier
+#define zdsleStoreSimplifierHandler zdsleStoreSimplifier
+#define zdslsStoreSimplifierHandler dftSimplifier
+#define zdstsStoreSimplifierHandler zdstsStoreSimplifier
+#define zdsleStoreiSimplifierHandler zdsleStoreSimplifier
+#define zdslsStoreiSimplifierHandler dftSimplifier
+#define zdstsStoreiSimplifierHandler zdstsStoreSimplifier
+#define zd2zdsleSimplifierHandler zd2zdsleSimplifier
+#define zd2zdslsSimplifierHandler zd2zdslsSimplifier
+#define zd2zdstsSimplifierHandler zd2zdslsSimplifier
+#define zdsle2pdSimplifierHandler zdsle2pdSimplifier
+#define zdsls2pdSimplifierHandler zdsls2pdSimplifier
+#define zdsts2pdSimplifierHandler zdsls2pdSimplifier
+#define zdsle2zdSimplifierHandler zdsle2zdSimplifier
+#define zdsls2zdSimplifierHandler zdsls2zdSimplifier
+#define zdsts2zdSimplifierHandler zdsls2zdSimplifier
+#define pd2zdslsSimplifierHandler pd2zdslsSimplifier
+#define pd2zdslsSetSignSimplifierHandler pd2zdslsSetSignSimplifier
+#define pd2zdstsSimplifierHandler pd2zdslsSimplifier
+#define pd2zdstsSetSignSimplifierHandler pd2zdslsSetSignSimplifier
+#define udLoadSimplifierHandler dftSimplifier
+#define udslLoadSimplifierHandler dftSimplifier
+#define udstLoadSimplifierHandler dftSimplifier
+#define udLoadiSimplifierHandler dftSimplifier
+#define udslLoadiSimplifierHandler dftSimplifier
+#define udstLoadiSimplifierHandler dftSimplifier
+#define udStoreSimplifierHandler pdstoreSimplifier
+#define udslStoreSimplifierHandler dftSimplifier
+#define udstStoreSimplifierHandler dftSimplifier
+#define udStoreiSimplifierHandler pdstoreSimplifier
+#define udslStoreiSimplifierHandler dftSimplifier
+#define udstStoreiSimplifierHandler dftSimplifier
+#define pd2udSimplifierHandler pd2udSimplifier
+#define pd2udslSimplifierHandler pd2udslSimplifier
+#define pd2udstSimplifierHandler pd2udslSimplifier
+#define udsl2udSimplifierHandler udsl2udSimplifier
+#define udst2udSimplifierHandler udsl2udSimplifier
+#define ud2pdSimplifierHandler ud2pdSimplifier
+#define udsl2pdSimplifierHandler udsx2pdSimplifier
+#define udst2pdSimplifierHandler udsx2pdSimplifier
+#define pdloadSimplifierHandler pdloadSimplifier
+#define pdloadiSimplifierHandler pdloadSimplifier
+#define pdstoreSimplifierHandler pdstoreSimplifier
+#define pdstoreiSimplifierHandler pdstoreSimplifier
+#define pdaddSimplifierHandler pdaddSimplifier
+#define pdsubSimplifierHandler pdsubSimplifier
+#define pdmulSimplifierHandler pdmulSimplifier
+#define pddivSimplifierHandler pddivSimplifier
+#define pdremSimplifierHandler dftSimplifier
+#define pdnegSimplifierHandler pdnegSimplifier
+#define pdabsSimplifierHandler dftSimplifier
+#define pdshrSimplifierHandler pdshrSimplifier
+#define pdshlSimplifierHandler pdshlSimplifier
+#define pdshrSetSignSimplifierHandler pdshrSetSignSimplifier
+#define pdshlSetSignSimplifierHandler pdshlSetSignSimplifier
+#define pdshlOverflowSimplifierHandler dftSimplifier
+#define pdchkSimplifierHandler dftSimplifier
+#define pd2iSimplifierHandler pd2iSimplifier
+#define pd2iOverflowSimplifierHandler dftSimplifier
+#define pd2iuSimplifierHandler dftSimplifier
+#define i2pdSimplifierHandler i2pdSimplifier
+#define iu2pdSimplifierHandler dftSimplifier
+#define pd2lSimplifierHandler pd2lSimplifier
+#define pd2lOverflowSimplifierHandler dftSimplifier
+#define pd2luSimplifierHandler pd2lSimplifier
+#define l2pdSimplifierHandler i2pdSimplifier
+#define lu2pdSimplifierHandler dftSimplifier
+#define pd2fSimplifierHandler pd2fSimplifier
+#define pd2dSimplifierHandler pd2fSimplifier
+#define f2pdSimplifierHandler f2pdSimplifier
+#define d2pdSimplifierHandler f2pdSimplifier
+#define pdcmpeqSimplifierHandler dftSimplifier
+#define pdcmpneSimplifierHandler dftSimplifier
+#define pdcmpltSimplifierHandler dftSimplifier
+#define pdcmpgeSimplifierHandler dftSimplifier
+#define pdcmpgtSimplifierHandler dftSimplifier
+#define pdcmpleSimplifierHandler dftSimplifier
+#define pdcleanSimplifierHandler pdcleanSimplifier
+#define pdclearSimplifierHandler pdclearSimplifier
+#define pdclearSetSignSimplifierHandler pdclearSetSignSimplifier
+#define pdSetSignSimplifierHandler pdSetSignSimplifier
+#define pdModifyPrecisionSimplifierHandler pdshlSimplifier
+#define countDigitsSimplifierHandler dftSimplifier
+#define BCDCHKSimplifierHandler dftSimplifier
+#define zdchkSimplifierHandler dftSimplifier
+
+#include "optimizer/OMRSimplifierTable.enum"
+
+#endif

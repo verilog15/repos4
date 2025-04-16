@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright IBM Corp. and others 2016
+
+This program and the accompanying materials are made available under
+the terms of the Eclipse Public License 2.0 which accompanies this
+distribution and is available at https://www.eclipse.org/legal/epl-2.0/
+or the Apache License, Version 2.0 which accompanies this distribution and
+is available at https://www.apache.org/licenses/LICENSE-2.0.
+
+This Source Code may also be made available under the following
+Secondary Licenses when the conditions for such availability set
+forth in the Eclipse Public License, v. 2.0 are satisfied: GNU
+General Public License, version 2 with the GNU Classpath
+Exception [1] and GNU General Public License, version 2 with the
+OpenJDK Assembly Exception [2].
+
+[1] https://www.gnu.org/software/classpath/license.html
+[2] https://openjdk.org/legal/assembly-exception.html
+
+SPDX-License-Identifier: EPL-2.0 OR Apache-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0 OR GPL-2.0-only WITH OpenJDK-assembly-exception-1.0
+-->
+<project name="JVMTI tests" default="build" basedir=".">
+	<taskdef resource='net/sf/antcontrib/antlib.xml' />
+	<description>
+		Build JVMTI tests
+	</description>
+
+	<import file="${TEST_ROOT}/functional/cmdLineTests/buildTools.xml" />
+
+	<!-- set global properties for this build -->
+	<property name="DEST" value="${BUILD_ROOT}/functional/cmdLineTests/jvmtitests" />
+	<property name="src" location="src" />
+	<property name="src_current" location="src_current" />
+	<property name="src_latest" location="src_latest" />
+	<property name="build" location="bin" />
+	<property name="asm.jar" location="${LIB_DIR}/asm-all.jar" />
+	<property name="LIB" value="asm_all" />
+	<import file="${TEST_ROOT}/TKG/scripts/getDependencies.xml" />
+
+	<target name="init">
+		<mkdir dir="${build}" />
+		<mkdir dir="${DEST}" />
+	</target>
+
+	<target name="compile" depends="init,getDependentLibs" description="compile the source">
+		<echo>Ant version is ${ant.version}</echo>
+		<echo>============COMPILER SETTINGS============</echo>
+		<echo>===fork:                         yes</echo>
+		<echo>===executable:                   ${compiler.javac}</echo>
+		<echo>===debug:                        on</echo>
+		<echo>===destdir:                      ${build}</echo>
+
+		<!-- Define variables to exclude Java21 and up tests for Java 8, 11 and 17. -->
+		<if>
+			<matches string="${JDK_VERSION}" pattern="^(8|11|17)$$" />
+			<then>
+				<property name="excludeJDK21UpGetStackTraceExtendedTest" value="com/ibm/jvmti/tests/getStackTraceExtended/gste002.java" />
+				<property name="excludeJDK21UpGetThreadListStackTracesExtendedTest" value="com/ibm/jvmti/tests/getThreadListStackTracesExtended/gtlste002.java" />
+			</then>
+			<else>
+				<property name="excludeJDK21UpGetStackTraceExtendedTest" value="" />
+				<property name="excludeJDK21UpGetThreadListStackTracesExtendedTest" value="" />
+			</else>
+		</if>
+
+		<if>
+			<equals arg1="${JDK_VERSION}" arg2="8" />
+			<then>
+				<javac destdir="${build}" debug="true" fork="true" executable="${compiler.javac}" includeAntRuntime="false" encoding="ISO-8859-1">
+					<src path="${src}" />
+					<exclude name="${excludeJDK21UpGetStackTraceExtendedTest}" />
+					<exclude name="${excludeJDK21UpGetThreadListStackTracesExtendedTest}" />
+					<classpath>
+						<pathelement location="${asm.jar}" />
+						<pathelement location="${TEST_JDK_HOME}/lib/tools.jar" />
+					</classpath>
+				</javac>
+			</then>
+			<else>
+				<property name="addExports" value="--add-exports java.base/jdk.internal.module=ALL-UNNAMED --add-exports java.base/openj9.internal.tools.attach.target=ALL-UNNAMED --add-exports java.base/com.ibm.tools.attach=ALL-UNNAMED --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED" />
+				<if>
+					<equals arg1="${JCL_VERSION}" arg2="latest" />
+					<then>
+						<property name="extraSrc" value="${src_latest}" />
+						<property name="excludeFile" value="**/modularityTests/**" />
+					</then>
+					<else>
+						<property name="extraSrc" value="${src_current}" />
+						<property name="excludeFile" value="" />
+					</else>
+				</if>
+				<if>
+					<matches string="${JDK_VERSION}" pattern="^(8|9|1[0-9]|2[0-2])$$" />
+					<then>
+						<javac destdir="${build}" debug="true" fork="true" executable="${compiler.javac}" includeAntRuntime="false" encoding="ISO-8859-1">
+							<src path="${src}" />
+							<src path="${extraSrc}" />
+							<exclude name="${excludeFile}" />
+							<exclude name="${excludeJDK21UpGetStackTraceExtendedTest}" />
+							<exclude name="${excludeJDK21UpGetThreadListStackTracesExtendedTest}" />
+							<compilerarg line="${addExports}" />
+							<classpath>
+								<pathelement location="${asm.jar}" />
+							</classpath>
+						</javac>
+					</then>
+					<else>
+						<!-- Java 23+ (SecurityManage and several Thread functions removed) -->
+						<javac destdir="${build}" debug="true" fork="true" executable="${compiler.javac}" includeAntRuntime="false" encoding="ISO-8859-1">
+							<src path="${src}" />
+							<src path="${extraSrc}" />
+							<exclude name="${excludeFile}" />
+							<exclude name="${excludeJDK21UpGetStackTraceExtendedTest}" />
+							<exclude name="${excludeJDK21UpGetThreadListStackTracesExtendedTest}" />
+							<compilerarg line="${addExports}" />
+							<exclude name="com/ibm/jvmti/tests/getThreadState/gts001.java" />
+							<classpath>
+								<pathelement location="${asm.jar}" />
+							</classpath>
+						</javac>
+					</else>
+				</if>
+			</else>
+		</if>
+
+		<!-- Compile VersionedClass separately -->
+		<copy file="${src}/com/ibm/jvmti/tests/getClassVersionNumbers/VersionedClass.java.dont_auto_compile"
+			tofile="${build}/com/ibm/jvmti/tests/getClassVersionNumbers/VersionedClass/VersionedClass.java" />
+		<!-- If you modified the source and target level in this javac, you also need to modify the corresponding java class version
+		in /cmdLineTests/jvmtitests/src/com/ibm/jvmti/tests/getClassVersionNumbers/gcvn001.java -->
+		<javac srcdir="${build}" destdir="${build}" includes="com/ibm/jvmti/tests/getClassVersionNumbers/VersionedClass/VersionedClass.java"
+			debug="true" fork="true" executable="${compiler.javac}" includeAntRuntime="false" source="1.8" target="1.8" encoding="ISO-8859-1" />
+
+	</target>
+
+	<target name="dist" depends="compile" description="generate the distribution">
+		<!-- Store all class files, and .c files in com.ibm.jvmti.tests.jar -->
+		<mkdir dir="${DEST}" />
+
+		<copy todir="${DEST}">
+			<fileset dir="${src}/../" includes="*.xml, jars/" />
+			<fileset dir="${src}/../" includes="*.mk" />
+		</copy>
+
+		<!-- Generate getClassVersionNumbers.jar file and delete the class file of VersionedClass -->
+		<jar jarfile="${DEST}/jars/getClassVersionNumbers.jar" basedir="${build}" filesonly="true"
+			includes="com/ibm/jvmti/tests/getClassVersionNumbers/VersionedClass/VersionedClass.class" />
+		<delete file="${build}/com/ibm/jvmti/tests/getClassVersionNumbers/VersionedClass/VersionedClass.class" />
+
+		<!-- Generate general jvmtitest jar -->
+		<jar jarfile="${DEST}/jvmtitest.jar" filesonly="true">
+			<fileset dir="${build}" />
+			<fileset dir="${src}" excludes="**/*.java, **/package.htm*" />
+			<fileset dir="${src}/../" includes="*.properties,*.xml" />
+		</jar>
+	</target>
+
+	<target name="clean" depends="dist" description="clean up">
+		<!-- Delete the ${build} directory trees -->
+		<delete dir="${build}" />
+	</target>
+
+	<target name="build" depends="buildCmdLineTestTools">
+		<if>
+			<or>
+				<equals arg1="${JDK_IMPL}" arg2="ibm" />
+				<equals arg1="${JDK_IMPL}" arg2="openj9" />
+			</or>
+			<then>
+				<antcall target="clean" inheritall="true" />
+			</then>
+		</if>
+	</target>
+</project>

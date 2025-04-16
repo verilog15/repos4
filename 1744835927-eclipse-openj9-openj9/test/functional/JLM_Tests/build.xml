@@ -1,0 +1,144 @@
+<?xml version="1.0"?>
+<!--
+Copyright IBM Corp. and others 2016
+
+This program and the accompanying materials are made available under
+the terms of the Eclipse Public License 2.0 which accompanies this
+distribution and is available at https://www.eclipse.org/legal/epl-2.0/
+or the Apache License, Version 2.0 which accompanies this distribution and
+is available at https://www.apache.org/licenses/LICENSE-2.0.
+
+This Source Code may also be made available under the following
+Secondary Licenses when the conditions for such availability set
+forth in the Eclipse Public License, v. 2.0 are satisfied: GNU
+General Public License, version 2 with the GNU Classpath
+Exception [1] and GNU General Public License, version 2 with the
+OpenJDK Assembly Exception [2].
+
+[1] https://www.gnu.org/software/classpath/license.html
+[2] https://openjdk.org/legal/assembly-exception.html
+
+SPDX-License-Identifier: EPL-2.0 OR Apache-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0 OR GPL-2.0-only WITH OpenJDK-assembly-exception-1.0
+-->
+<project name="JLM_Tests" default="build" basedir=".">
+
+	<description>
+		Build JLM Tests
+	</description>
+
+	<!-- Set global properties for this build. -->
+	<property name="DEST" value="${BUILD_ROOT}/functional/JLM_Tests" />
+
+	<property name="src" location="./src" />
+	<property name="src_80" location="./src_80" />
+	<property name="src_90" location="./src_90" />
+	<property name="build" location="./bin" />
+	<property name="transformerListener" location="${TEST_ROOT}/Utils/src"/>
+	<property name="TestUtilities" location="../TestUtilities/src"/>
+	<property name="LIB" value="jcommander,commons_exec,testng"/>
+	<import file="${TEST_ROOT}/TKG/scripts/getDependencies.xml"/>
+
+	<target name="init">
+		<fail message="BUILD_ROOT must be defined." unless="BUILD_ROOT" />
+		<mkdir dir="${DEST}" />
+		<mkdir dir="${build}" />
+		<condition property="excludeTestCRaCMXBean" value="" else="org/openj9/test/java/lang/management/TestCRaCMXBean.java">
+			<contains string="${TEST_FLAG}" substring="CRAC" />
+		</condition>
+	</target>
+
+	<target name="compile" depends="init,getDependentLibs" description="using java ${JDK_VERSION} to compile the source ">
+		<echo>Ant version is ${ant.version}</echo>
+		<echo>============COMPILER SETTINGS============</echo>
+		<echo>===fork:                         yes</echo>
+		<echo>===executable:                   ${compiler.javac}</echo>
+		<echo>===debug:                        on</echo>
+		<echo>===destdir:                      ${build}</echo>
+
+		<if>
+			<equals arg1="${JDK_VERSION}" arg2="8"/>
+			<then>
+				<javac srcdir="${src}" destdir="${build}" debug="true" fork="true" executable="${compiler.javac}" includeAntRuntime="false" encoding="ISO-8859-1">
+					<src path="${src}" />
+					<src path="${src_80}" />
+					<src path="${transformerListener}" />
+					<src path="${TestUtilities}" />
+					<classpath>
+						<pathelement location="${LIB_DIR}/testng.jar" />
+						<pathelement location="${LIB_DIR}/jcommander.jar" />
+						<pathelement location="${LIB_DIR}/commons-exec.jar" />
+						<pathelement location="${TEST_JDK_HOME}/lib/tools.jar" />
+					</classpath>
+					<exclude name="${excludeTestCRaCMXBean}" />
+				</javac>
+			</then>
+			<else>
+				<property name="addExports" value="--add-exports jdk.management/jdk.crac.management=ALL-UNNAMED
+					--add-exports java.management/com.ibm.java.lang.management.internal=ALL-UNNAMED
+					--add-exports jdk.management/com.ibm.lang.management.internal=ALL-UNNAMED
+					--add-exports java.management/javax.management=ALL-UNNAMED
+					--add-exports java.base/java.security=ALL-UNNAMED" />
+				<property name="TestUtilitiesExports" value="--add-exports java.base/openj9.internal.tools.attach.target=ALL-UNNAMED" />
+				<property name="srcpath" location="${src}:${src_90}:${transformerListener}:${TestUtilities}" />
+				<path id="build.cp">
+					<fileset dir="${LIB_DIR}/" includes="testng.jar"/>
+					<fileset dir="${LIB_DIR}/" includes="jcommander.jar"/>
+					<fileset dir="${LIB_DIR}/" includes="commons-exec.jar"/>
+				</path>
+				<if>
+					<matches string="${JDK_VERSION}" pattern="^(9|(1[0-8]))$$" />
+					<then>
+						<!-- Java 9-18 -->
+						<javac srcdir="${srcpath}" destdir="${build}" debug="true" fork="true" executable="${compiler.javac}" includeAntRuntime="false" encoding="ISO-8859-1" classpathref="build.cp">
+							<compilerarg line='${addExports} ${TestUtilitiesExports}' />
+							<exclude name="${excludeTestCRaCMXBean}" />
+						</javac>
+					</then>
+					<else>
+						<!-- Java 19+ (SecurityManager removed) -->
+						<javac srcdir="${srcpath}" destdir="${build}" debug="true" fork="true" executable="${compiler.javac}" includeAntRuntime="false" encoding="ISO-8859-1" classpathref="build.cp">
+							<compilerarg line='${addExports} ${TestUtilitiesExports}' />
+							<!-- exclude tests that depend on SecurityManager -->
+							<exclude name="org/openj9/test/java/lang/management/TestSharedClassMemoryMXBean_SM.java" />
+							<exclude name="org/openj9/test/java/lang/management/TestRegression_SM.java" />
+							<exclude name="${excludeTestCRaCMXBean}" />
+						</javac>
+					</else>
+				</if>
+			</else>
+		</if>
+	</target>
+
+	<target name="dist" depends="compile" description="generate the distribution">
+		<!-- Store all class files in jlm-tests.jar file. -->
+		<mkdir dir="${DEST}"/>
+		<jar jarfile="${DEST}/jlm_tests.jar" filesonly="true">
+			<fileset dir="${build}"/>
+			<fileset dir="${src}">
+				<exclude name="${excludeTestCRaCMXBean}" />
+			</fileset>
+			<fileset dir="${src}/../" includes="*.properties,*.xml">
+			</fileset>
+		</jar>
+		<copy todir="${DEST}">
+			<fileset dir="${src}/../" includes="*.mk,*.xml" />
+		</copy>
+	</target>
+
+	<target name="clean" depends="dist" description="clean up">
+		<!-- Delete the ${build} directory tree. -->
+		<delete dir="${build}"/>
+	</target>
+
+	<target name="build" >
+		<if>
+			<or>
+				<equals arg1="${JDK_IMPL}" arg2="ibm" />
+				<equals arg1="${JDK_IMPL}" arg2="openj9" />
+			</or>
+			<then>
+				<antcall target="clean" inheritall="true" />
+			</then>
+		</if>
+	</target>
+</project>

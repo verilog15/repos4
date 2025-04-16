@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+
+<!--
+  Copyright IBM Corp. and others 2022
+
+  This program and the accompanying materials are made available under
+  the terms of the Eclipse Public License 2.0 which accompanies this
+  distribution and is available at https://www.eclipse.org/legal/epl-2.0/
+  or the Apache License, Version 2.0 which accompanies this distribution and
+  is available at https://www.apache.org/licenses/LICENSE-2.0.
+
+  This Source Code may also be made available under the following
+  Secondary Licenses when the conditions for such availability set
+  forth in the Eclipse Public License, v. 2.0 are satisfied: GNU
+  General Public License, version 2 with the GNU Classpath
+  Exception [1] and GNU General Public License, version 2 with the
+  OpenJDK Assembly Exception [2].
+
+  [1] https://www.gnu.org/software/classpath/license.html
+  [2] https://openjdk.org/legal/assembly-exception.html
+
+  SPDX-License-Identifier: EPL-2.0 OR Apache-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0 OR GPL-2.0-only WITH OpenJDK-assembly-exception-1.0
+-->
+
+<!DOCTYPE suite SYSTEM "cmdlinetester.dtd">
+
+<suite id="J9 Criu Command-Line Option Tests" timeout="300">
+  <variable name="MAINCLASS_TIMEOUTADJUSTMENT" value="org.openj9.criu.JDK11UpTimeoutAdjustmentTest" />
+  <variable name="EXPORTS" value="--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED --add-exports=java.base/openj9.internal.criu=ALL-UNNAMED"/>
+  <variable name="TRACECRIU" value="-Xtrace:print={j9vm.684-696,j9vm.699,j9vm.717-743}" />
+
+  <test id="Create CRIU checkpoint image and restore once - testThreadPark">
+    <command>bash $SCRIPPATH$ $TEST_RESROOT$ $JAVA_COMMAND$ "$JVM_OPTIONS$ $TRACECRIU$ $EXPORTS$" $MAINCLASS_TIMEOUTADJUSTMENT$ testThreadPark 1 false false</command>
+    <output type="success" caseSensitive="yes" regex="no">PASSED: expected park time</output>
+    <output type="required" caseSensitive="no" regex="no">Killed</output>
+    <output type="required" caseSensitive="yes" regex="no">Start test name: testThreadPark</output>
+    <output type="failure" caseSensitive="yes" regex="no">CRIU is not enabled</output>
+    <output type="failure" caseSensitive="yes" regex="no">Operation not permitted</output>
+    <output type="failure" caseSensitive="yes" regex="no">FAILED: expected sleep time</output>
+    <!-- If CRIU can't acquire the original thread IDs, this test will fail. Nothing can be done about this failure. -->
+    <output type="success" caseSensitive="yes" regex="no">Unable to create a thread:</output>
+    <output type="success" caseSensitive="yes" regex="no">Thread pid mismatch</output>
+    <output type="success" caseSensitive="yes" regex="no">do not match expected</output>
+    <!-- In the past, the failure below was caused by an issue where CRIU can't be found on the PATH. -->
+    <output type="failure" caseSensitive="yes" regex="no">Could not dump the JVM processes, err=-70</output>
+    <output type="failure" caseSensitive="yes" regex="no">User requested Java dump using</output>
+    <output type="failure" caseSensitive="yes" regex="no">AOT load and compilation disabled post restore</output>
+  </test>
+
+  <test id="Create CRIU checkpoint image and restore once - testThreadSleep">
+    <command>bash $SCRIPPATH$ $TEST_RESROOT$ $JAVA_COMMAND$ "$JVM_OPTIONS$ $TRACECRIU$ $EXPORTS$" $MAINCLASS_TIMEOUTADJUSTMENT$ testThreadSleep 1 false false</command>
+    <output type="success" caseSensitive="yes" regex="no">PASSED: expected sleep time</output>
+    <output type="required" caseSensitive="no" regex="no">Killed</output>
+    <output type="required" caseSensitive="yes" regex="no">Start test name: testThreadSleep</output>
+    <output type="failure" caseSensitive="yes" regex="no">CRIU is not enabled</output>
+    <output type="failure" caseSensitive="yes" regex="no">Operation not permitted</output>
+    <output type="failure" caseSensitive="yes" regex="no">FAILED: expected sleep time</output>
+    <output type="failure" caseSensitive="yes" regex="no">InterruptedException</output>
+    <!-- If CRIU can't acquire the original thread IDs, this test will fail. Nothing can be done about this failure. -->
+    <output type="success" caseSensitive="yes" regex="no">Unable to create a thread:</output>
+    <output type="success" caseSensitive="yes" regex="no">Thread pid mismatch</output>
+    <output type="success" caseSensitive="yes" regex="no">do not match expected</output>
+    <!-- In the past, the failure below was caused by an issue where CRIU can't be found on the PATH. -->
+    <output type="failure" caseSensitive="yes" regex="no">Could not dump the JVM processes, err=-70</output>
+    <output type="failure" caseSensitive="yes" regex="no">User requested Java dump using</output>
+    <output type="failure" caseSensitive="yes" regex="no">AOT load and compilation disabled post restore</output>
+  </test>
+
+  <test id="Create CRIU checkpoint image and restore once - testObjectWaitNotify">
+    <command>bash $SCRIPPATH$ $TEST_RESROOT$ $JAVA_COMMAND$ "$JVM_OPTIONS$ $TRACECRIU$ $EXPORTS$" $MAINCLASS_TIMEOUTADJUSTMENT$ testObjectWaitNotify 1 false false</command>
+    <output type="success" caseSensitive="yes" regex="no">PASSED: expected wait time</output>
+    <output type="required" caseSensitive="no" regex="no">Killed</output>
+    <output type="required" caseSensitive="yes" regex="no">Start test name: testObjectWaitNotify</output>
+    <output type="failure" caseSensitive="yes" regex="no">CRIU is not enabled</output>
+    <output type="failure" caseSensitive="yes" regex="no">Operation not permitted</output>
+    <output type="failure" caseSensitive="yes" regex="no">FAILED: expected wait time</output>
+    <output type="failure" caseSensitive="yes" regex="no">InterruptedException</output>
+    <!-- If CRIU can't acquire the original thread IDs, this test will fail. Nothing can be done about this failure. -->
+    <output type="success" caseSensitive="yes" regex="no">Unable to create a thread:</output>
+    <output type="success" caseSensitive="yes" regex="no">Thread pid mismatch</output>
+    <output type="success" caseSensitive="yes" regex="no">do not match expected</output>
+    <!-- In the past, the failure below was caused by an issue where CRIU can't be found on the PATH. -->
+    <output type="failure" caseSensitive="yes" regex="no">Could not dump the JVM processes, err=-70</output>
+    <output type="failure" caseSensitive="yes" regex="no">User requested Java dump using</output>
+    <output type="failure" caseSensitive="yes" regex="no">AOT load and compilation disabled post restore</output>
+  </test>
+
+  <!-- test id="Create CRIU checkpoint image and restore once - testObjectWaitTimedNoNanoSecond">
+    <command>bash $SCRIPPATH$ $TEST_RESROOT$ $JAVA_COMMAND$ "$JVM_OPTIONS$ $TRACECRIU$ $EXPORTS$" $MAINCLASS_TIMEOUTADJUSTMENT$ testObjectWaitTimedNoNanoSecond 1 false false</command>
+    <output type="success" caseSensitive="yes" regex="no">PASSED: expected wait time</output>
+    <output type="required" caseSensitive="no" regex="no">Killed</output>
+    <output type="required" caseSensitive="yes" regex="no">Start test name: testObjectWaitTimedNoNanoSecond</output>
+    <output type="failure" caseSensitive="yes" regex="no">CRIU is not enabled</output>
+    <output type="failure" caseSensitive="yes" regex="no">Operation not permitted</output>
+    <output type="failure" caseSensitive="yes" regex="no">FAILED: expected wait time</output>
+    <output type="failure" caseSensitive="yes" regex="no">InterruptedException</output>
+    <output type="success" caseSensitive="yes" regex="no">Unable to create a thread:</output>
+    <output type="success" caseSensitive="yes" regex="no">Thread pid mismatch</output>
+    <output type="success" caseSensitive="yes" regex="no">do not match expected</output>
+    <output type="failure" caseSensitive="yes" regex="no">Could not dump the JVM processes, err=-70</output>
+    <output type="failure" caseSensitive="yes" regex="no">User requested Java dump using</output>
+    <output type="failure" caseSensitive="yes" regex="no">AOT load and compilation disabled post restore</output>
+  </test>
+
+  <test id="Create CRIU checkpoint image and restore once - testObjectWaitTimedWithNanoSecond">
+    <command>bash $SCRIPPATH$ $TEST_RESROOT$ $JAVA_COMMAND$ "$JVM_OPTIONS$ $TRACECRIU$ $EXPORTS$" $MAINCLASS_TIMEOUTADJUSTMENT$ testObjectWaitTimedWithNanoSecond 1 false false</command>
+    <output type="success" caseSensitive="yes" regex="no">PASSED: expected wait time</output>
+    <output type="required" caseSensitive="no" regex="no">Killed</output>
+    <output type="required" caseSensitive="yes" regex="no">Start test name: testObjectWaitTimedWithNanoSecond</output>
+    <output type="failure" caseSensitive="yes" regex="no">CRIU is not enabled</output>
+    <output type="failure" caseSensitive="yes" regex="no">Operation not permitted</output>
+    <output type="failure" caseSensitive="yes" regex="no">FAILED: expected wait time</output>
+    <output type="failure" caseSensitive="yes" regex="no">InterruptedException</output>
+    <output type="success" caseSensitive="yes" regex="no">Unable to create a thread:</output>
+    <output type="success" caseSensitive="yes" regex="no">Thread pid mismatch</output>
+    <output type="success" caseSensitive="yes" regex="no">do not match expected</output>
+    <output type="failure" caseSensitive="yes" regex="no">Could not dump the JVM processes, err=-70</output>
+    <output type="failure" caseSensitive="yes" regex="no">User requested Java dump using</output>
+    <output type="failure" caseSensitive="yes" regex="no">AOT load and compilation disabled post restore</output>
+  </test -->
+</suite>

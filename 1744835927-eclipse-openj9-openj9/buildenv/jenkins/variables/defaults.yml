@@ -1,0 +1,547 @@
+###############################################################################
+# Copyright IBM Corp. and others 2018
+#
+# This program and the accompanying materials are made available under
+# the terms of the Eclipse Public License 2.0 which accompanies this
+# distribution and is available at https://www.eclipse.org/legal/epl-2.0/
+# or the Apache License, Version 2.0 which accompanies this distribution and
+# is available at https://www.apache.org/licenses/LICENSE-2.0.
+#
+# This Source Code may also be made available under the following
+# Secondary Licenses when the conditions for such availability set
+# forth in the Eclipse Public License, v. 2.0 are satisfied: GNU
+# General Public License, version 2 with the GNU Classpath
+# Exception [1] and GNU General Public License, version 2 with the
+# OpenJDK Assembly Exception [2].
+#
+# [1] https://www.gnu.org/software/classpath/license.html
+# [2] https://openjdk.org/legal/assembly-exception.html
+#
+# SPDX-License-Identifier: EPL-2.0 OR Apache-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0 OR GPL-2.0-only WITH OpenJDK-assembly-exception-1.0
+###############################################################################
+#========================================#
+# Git repositories
+#========================================#
+# Eclipse OpenJ9 extensions repositories
+openjdk:
+  8:
+    default:
+      repoUrl: 'https://github.com/ibmruntimes/openj9-openjdk-jdk8.git'
+      branch: 'openj9'
+  11:
+    default:
+      repoUrl: 'https://github.com/ibmruntimes/openj9-openjdk-jdk11.git'
+      branch: 'openj9'
+  17:
+    default:
+      repoUrl: 'https://github.com/ibmruntimes/openj9-openjdk-jdk17.git'
+      branch: 'openj9'
+  21:
+    default:
+      repoUrl: 'https://github.com/ibmruntimes/openj9-openjdk-jdk21.git'
+      branch: 'openj9'
+  24:
+    default:
+      repoUrl: 'https://github.com/ibmruntimes/openj9-openjdk-jdk24.git'
+      branch: 'openj9'
+  next:
+    default:
+      repoUrl: 'https://github.com/ibmruntimes/openj9-openjdk-jdk.git'
+      branch: 'openj9'
+    [aarch64_linux_valhalla, aarch64_linux_vt_standard, ppc64_aix_valhalla, ppc64_aix_vt_standard, ppc64le_linux_valhalla, ppc64le_linux_vt_standard, s390x_linux_valhalla, s390x_linux_vt_standard, x86-64_mac_valhalla, x86-64_mac_vt_standard, x86-64_linux_valhalla, x86-64_linux_vt_standard, x86-64_windows_valhalla, x86-64_windows_vt_standard]:
+      repoUrl: 'https://github.com/ibmruntimes/openj9-openjdk-jdk.valuetypes.git'
+      branch: 'openj9'
+# OpenJ9 & OMR Repos (used by ref repo updater)
+openj9:
+  default:
+    repoUrl: 'https://github.com/eclipse-openj9/openj9.git'
+omr:
+  default:
+    repoUrl: 'https://github.com/eclipse-omr/omr.git'
+# Adoptium AQA Testing repository
+adoptopenjdk:
+  default:
+    repoUrl: 'https://github.com/adoptium/aqa-tests.git'
+    branch: 'master'
+#========================================#
+# Artifactory settings
+#========================================#
+artifactory:
+  defaultGeo: 'osu'
+  server:
+    osu: 'ci-eclipse-openj9'
+  repo:
+    default: 'ci-openj9'
+  uploadDir:
+    default: "${repo}/${JOB_NAME}/${BUILD_ID}"
+  buildNamePrefix:
+    osu: ''
+  daysToKeepArtifacts:
+    osu: 40
+  manualCleanup:
+    osu: true
+  vpn:
+    osu: false
+#========================================#
+# Miscellaneous settings
+#========================================#
+misc:
+  jdk_image_dir:
+    all: 'jdk'
+    8: 'j2sdk-image'
+  test_keep_reportdir:
+    sanity.openjdk: 'true'
+    extended.openjdk: 'true'
+    special.openjdk: 'true'
+    extended.functional: 'true'
+  sdk_filename_template:
+    default: "OpenJ9-JDK${SDK_VERSION}-${SPEC}-${DATESTAMP}${SDK_FILE_EXT}"
+credentials:
+  github: 'github-bot'
+  dockerhub: 'docker-login'
+test_dependencies_job_name: 'test.getDependency'
+slack_channel: '#jenkins'
+build_discarder:
+  logs:
+    Nightly: 40
+    Release: 5
+    OMR: 15
+    OpenJDK8: 5
+    OpenJDK11: 5
+    OpenJDK17: 10
+    OpenJDK21: 10
+    OpenJDK24: 10
+    OpenJDK: 10
+    Personal: 30
+    Pipeline: 100
+restart_timeout:
+  time: '5'
+  units: 'HOURS'
+#========================================#
+# Debug information
+#========================================#
+debuginfo:
+  extra_configure_options:
+    8: '--disable-zip-debug-info'
+#========================================#
+# JITServer
+#========================================#
+jitserver:
+  extra_configure_options: '--enable-jitserver'
+  test_flags: 'JITAAS'
+#========================================#
+# OpenSSL
+#========================================#
+openssl:
+  extra_getsource_options: '-openssl-branch=openssl-3.0.16'
+  extra_configure_options: '--with-openssl=fetched'
+#========================================#
+# OpenSSL Bundling
+#========================================#
+openssl_bundle:
+  extra_configure_options: --enable-openssl-bundling
+#========================================#
+# Reference Repo
+#========================================#
+openjdk_reference_repo:
+  openjdk_reference_repo: '/home/jenkins/openjdk_cache'
+#========================================#
+# BootJDK Default values
+#========================================#
+boot_jdk_default:
+  boot_jdk:
+    location:
+      all: '${HOME}/bootjdks'
+    version:
+      8: '8'
+      11: '11'
+      17: '17'
+      21: '21'
+      24: '24'
+      next: '24'
+    dir_strip:
+      all: '1'
+    url:
+      all: 'https://api.adoptopenjdk.net/v3/binary/latest/${bootJDKVersion}/ga/${os}/${arch}/jdk/openj9/normal/adoptopenjdk?project=jdk'
+      24: 'https://api.adoptium.net/v3/binary/latest/${bootJDKVersion}/ga/${os}/${arch}/jdk/hotspot/normal/eclipse'
+#========================================#
+# CUDA
+#========================================#
+cuda:
+  extra_configure_options: '--enable-cuda'
+#========================================#
+# CUDA default version
+#========================================#
+cuda_default:
+  extends: ['cuda']
+  extra_configure_options: '--with-cuda=/usr/local/cuda'
+#========================================#
+# Disable javac server
+#========================================#
+disable_javac_server:
+  extra_configure_options:
+    11: '--disable-javac-server'
+    17: '--disable-javac-server'
+    21: '--disable-javac-server'
+    24: '--disable-javac-server'
+    next: '--disable-javac-server'
+#========================================#
+# Valhalla
+#========================================#
+valhalla:
+  extra_configure_options: '--enable-inline-types'
+  test_build_list: 'functional/Valhalla,functional/cmdline_options_tester,functional/cmdLineTests/valuetypeddrtests'
+#========================================#
+# Valhalla Standard Testing
+#========================================#
+valhalla_standard:
+  extra_configure_options: '--enable-inline-types'
+#========================================#
+# OpenJDK JSR292
+#========================================#
+ojdk292:
+  extra_configure_options: '--enable-openjdk-methodhandles'
+#========================================#
+# RAM Persistence
+#========================================#
+snapshots:
+  extra_configure_options: '--enable-snapshots'
+#========================================#
+# Linux PPCLE 64bits
+#========================================#
+ppc64le_linux:
+  extends: ['boot_jdk_default', 'cuda_default', 'debuginfo', 'openjdk_reference_repo', 'openssl', 'openssl_bundle']
+  boot_jdk:
+    arch: 'ppc64le'
+    os: 'linux'
+  release:
+    all: 'linux-ppc64le-server-release'
+    8: 'linux-ppc64le-normal-server-release'
+    11: 'linux-ppc64le-normal-server-release'
+  node_labels:
+    build: 'ci.role.build && hw.arch.ppc64le && sw.tool.docker'
+    docker_image: 'adoptopenjdk/centos7_build_image:latest'
+  build_env:
+    vars:
+      all: 'CC=/usr/local/gcc11/bin/gcc-11.2 CXX=/usr/local/gcc11/bin/g++-11.2'
+#========================================#
+# Linux PPCLE 64bits /w JITSERVER
+#========================================#
+ppc64le_linux_jit:
+  extends: ['ppc64le_linux', 'jitserver']
+#========================================#
+# Linux S390 64bits
+#========================================#
+s390x_linux:
+  extends: ['boot_jdk_default', 'debuginfo', 'openjdk_reference_repo', 'openssl', 'openssl_bundle']
+  boot_jdk:
+    arch: 's390x'
+    os: 'linux'
+  release:
+    all: 'linux-s390x-server-release'
+    8: 'linux-s390x-normal-server-release'
+    11: 'linux-s390x-normal-server-release'
+  node_labels:
+    build: 'ci.role.build && hw.arch.s390x && sw.os.rhel.7'
+  build_env:
+    cmd:
+      all: 'source /home/jenkins/set_gcc_11.2.0_env'
+#========================================#
+# Linux S390 64bits /w JITSERVER
+#========================================#
+s390x_linux_jit:
+  extends: ['s390x_linux', 'jitserver']
+#========================================#
+# AIX PPC 64bits
+#========================================#
+ppc64_aix:
+  extends: ['boot_jdk_default', 'debuginfo', 'disable_javac_server', 'openjdk_reference_repo', 'openssl', 'openssl_bundle']
+  boot_jdk:
+    location: '/opt/bootjdks'
+    arch: 'ppc64'
+    os: 'aix'
+    url:
+      24: 'https://openj9-artifactory.osuosl.org/artifactory/ci-openj9/Build_JDK24_ppc64_aix_Nightly/56/OpenJ9-JDK24-ppc64_aix-20250411-011534.tar.gz'
+  release:
+    all: 'aix-ppc64-server-release'
+    8: 'aix-ppc64-normal-server-release'
+    11: 'aix-ppc64-normal-server-release'
+  node_labels:
+    build: 'ci.role.build && hw.arch.ppc64 && sw.os.aix.7_2'
+  extra_configure_options:
+    all: '--with-cups-include=/opt/freeware/include'
+    8: ' --disable-ccache'
+    11: '--disable-warnings-as-errors'
+    17: '--disable-warnings-as-errors'
+    21: '--disable-warnings-as-errors'
+    24: '--disable-warnings-as-errors'
+    next: '--disable-warnings-as-errors'
+  build_env:
+    vars:
+      all: 'PATH+XLC=/opt/IBM/xlC/16.1.0/bin:/opt/IBM/xlc/16.1.0/bin CC=xlclang CXX=xlclang++'
+#========================================#
+# Linux x86 64bits
+#========================================#
+x86-64_linux:
+  extends: ['boot_jdk_default', 'cuda_default', 'debuginfo', 'openjdk_reference_repo', 'openssl', 'openssl_bundle']
+  boot_jdk:
+    arch: 'x64'
+    os: 'linux'
+  release:
+    all: 'linux-x86_64-server-release'
+    8: 'linux-x86_64-normal-server-release'
+    11: 'linux-x86_64-normal-server-release'
+  node_labels:
+    build:
+      all: 'ci.role.build && hw.arch.x86 && sw.tool.docker'
+    docker_image:
+      8: 'adoptopenjdk/centos6_build_image:latest'
+      11: 'adoptopenjdk/centos6_build_image:latest'
+      all: 'adoptopenjdk/centos7_build_image:latest'
+  build_env:
+    vars:
+      all: 'CC=/usr/local/gcc11/bin/gcc-11.2 CXX=/usr/local/gcc11/bin/g++-11.2'
+  extra_test_labels:
+    11: '!sw.os.cent.6'
+    17: '!sw.os.cent.6'
+    21: '!sw.os.cent.6'
+    24: '!sw.os.cent.6'
+    next: '!sw.os.cent.6'
+#========================================#
+# Linux x86 64bits /w JITSERVER
+#========================================#
+x86-64_linux_jit:
+  extends: ['x86-64_linux', 'jitserver']
+#========================================#
+# Linux Aarch 64bits
+#========================================#
+aarch64_linux:
+  extends: ['boot_jdk_default', 'debuginfo', 'openjdk_reference_repo', 'openssl', 'openssl_bundle']
+  boot_jdk:
+    arch: 'aarch64'
+    os: 'linux'
+  release:
+    all: 'linux-aarch64-server-release'
+    8: 'linux-aarch64-normal-server-release'
+    11: 'linux-aarch64-normal-server-release'
+  node_labels:
+    build: 'ci.role.build && hw.arch.aarch64 && sw.tool.docker'
+    docker_image: 'adoptopenjdk/centos7_build_image@sha256:14254361f71a38b80d7f405c9de762fda780060589c070411b2c205b6ee26974'
+  build_env:
+    vars:
+      all: 'CC=/usr/local/gcc10/bin/gcc-10.3 CXX=/usr/local/gcc10/bin/g++-10.3'
+  fail_pattern: 'IOException caught during compilation: Resource deadlock avoided'
+#========================================#
+# Linux Aarch 64bits /w JITSERVER
+#========================================#
+aarch64_linux_jit:
+  extends: ['aarch64_linux', 'jitserver']
+#========================================#
+# Windows x86 64bits
+#========================================#
+x86-64_windows:
+  extends: ['boot_jdk_default', 'cuda', 'debuginfo', 'openjdk_reference_repo', 'openssl', 'openssl_bundle']
+  boot_jdk:
+    arch: 'x64'
+    os: 'windows'
+  release:
+    all: 'windows-x86_64-server-release'
+    8: 'windows-x86_64-normal-server-release'
+    11: 'windows-x86_64-normal-server-release'
+  extra_configure_options:
+    all: '--with-toolchain-version=2022 --disable-ccache --with-cuda="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v9.0"'
+  node_labels:
+    build: 'ci.role.build && hw.arch.x86 && sw.os.windows'
+  build_env:
+    vars: 'PATH+TOOLS=/cygdrive/c/openjdk/LLVM64/bin:/cygdrive/c/openjdk/nasm-2.13.03'
+  fail_pattern: 'C1083|LNK1181|RC1015'
+#========================================#
+# Windows x86 32bits
+#========================================#
+x86-32_windows:
+  extends: ['boot_jdk_default', 'debuginfo', 'openjdk_reference_repo', 'openssl', 'openssl_bundle']
+  boot_jdk:
+    arch: 'x64'
+    os: 'windows'
+  release:
+    8: 'windows-x86-normal-server-release'
+  extra_configure_options:
+    8: '--with-toolchain-version=2022 --with-target-bits=32 --disable-ccache'
+  node_labels:
+    build:
+      8: 'ci.role.build && hw.arch.x86 && sw.os.windows'
+  build_env:
+    vars:
+      8: 'PATH+TOOLS=/cygdrive/c/openjdk/LLVM32/bin:/cygdrive/c/openjdk/nasm-2.13.03'
+  fail_pattern: 'C1083|LNK1181|RC1015'
+#========================================#
+# Mac x86 64bits
+#========================================#
+x86-64_mac:
+  extends: ['boot_jdk_default', 'debuginfo', 'openssl', 'openssl_bundle']
+  boot_jdk:
+    arch: 'x64'
+    os: 'mac'
+    dir_strip:
+      all: '3'
+  release:
+    all: 'macosx-x86_64-server-release'
+    8: 'macosx-x86_64-normal-server-release'
+    11: 'macosx-x86_64-normal-server-release'
+  extra_configure_options:
+    8: '--with-toolchain-type=clang'
+  openjdk_reference_repo: '/Users/jenkins/openjdk_cache'
+  node_labels:
+    build: 'ci.role.build && hw.arch.x86 && sw.os.mac && sw.tool.xcode.15_2'
+  build_env:
+    vars: 'OPENJ9_JAVA_OPTIONS=-Xdump:system+java:events=systhrow,filter=java/lang/ClassCastException,request=exclusive+prepwalk+preempt'
+  fail_pattern: 'IOException caught during compilation: Resource deadlock avoided'
+#========================================#
+# Mac Aarch64
+#========================================#
+aarch64_mac:
+  extends: ['boot_jdk_default', 'openssl', 'openssl_bundle']
+  boot_jdk:
+    arch: 'aarch64'
+    os: 'mac'
+    dir_strip:
+      all: '3'
+  release:
+    all: 'macosx-aarch64-server-release'
+    8: 'macosx-aarch64-normal-server-release'
+    11: 'macosx-aarch64-normal-server-release'
+  extra_configure_options:
+    all: '--with-noncompressedrefs'
+  openjdk_reference_repo: '/Users/jenkins/openjdk_cache'
+  node_labels:
+    build: 'ci.role.build && hw.arch.aarch64 && sw.os.mac && sw.tool.xcode.15_2'
+  fail_pattern: 'IOException caught during compilation: Resource deadlock avoided'
+#========================================#
+# Linux PPCLE 64bits /w OpenJDK JSR292
+#========================================#
+ppc64le_linux_ojdk292:
+  extends: ['ppc64le_linux', 'ojdk292']
+#========================================#
+# Linux S390 64bits /w OpenJDK JSR292
+#========================================#
+s390x_linux_ojdk292:
+  extends: ['s390x_linux', 'ojdk292']
+#========================================#
+# AIX PPC 64bits /w OpenJDK JSR292
+#========================================#
+ppc64_aix_ojdk292:
+  extends: ['ppc64_aix', 'ojdk292']
+#========================================#
+# Linux x86 64bits /w OpenJDK JSR292
+#========================================#
+x86-64_linux_ojdk292:
+  extends: ['x86-64_linux', 'ojdk292']
+#========================================#
+# Windows x86 64bits /w OpenJDK JSR292
+#========================================#
+x86-64_windows_ojdk292:
+   extends: ['x86-64_windows', 'ojdk292']
+#========================================#
+# Windows x86 32bits /w OpenJDK JSR292
+#========================================#
+x86-32_windows_ojdk292:
+   extends: ['x86-32_windows', 'ojdk292']
+#========================================#
+# OSX x86 64bits /w OpenJDK JSR292
+#========================================#
+x86-64_mac_ojdk292:
+  extends: ['x86-64_mac', 'ojdk292']
+#========================================#
+# Linux Aarch64 64bits /w OpenJDK JSR292
+#========================================#
+aarch64_linux_ojdk292:
+  extends: ['aarch64_linux', 'ojdk292']
+#========================================#
+# Aarch64 Mac 64bits /w OpenJDK JSR292
+#========================================#
+aarch64_mac_ojdk292:
+  extends: ['aarch64_mac', 'ojdk292']
+#========================================#
+# AOT testing
+#========================================#
+aot:
+  test_flags: 'AOT'
+aarch64_linux_aot:
+  extends: ['aarch64_linux', 'aot']
+aarch64_mac_aot:
+  extends: ['aarch64_mac', 'aot']
+ppc64_aix_aot:
+  extends: ['ppc64_aix', 'aot']
+ppc64le_linux_aot:
+  extends: ['ppc64le_linux', 'aot']
+s390x_linux_aot:
+  extends: ['s390x_linux', 'aot']
+x86-64_linux_aot:
+  extends: ['x86-64_linux', 'aot']
+x86-64_mac_aot:
+  extends: ['x86-64_mac', 'aot']
+x86-64_windows_aot:
+  extends: ['x86-64_windows', 'aot']
+#========================================#
+# Valhalla Testing
+#========================================#
+x86-64_linux_valhalla:
+  extends: ['x86-64_linux', 'valhalla']
+x86-64_linux_vt_standard:
+  extends: ['x86-64_linux', 'valhalla_standard']
+ppc64le_linux_valhalla:
+  extends: ['ppc64le_linux', 'valhalla']
+ppc64le_linux_vt_standard:
+  extends: ['ppc64le_linux', 'valhalla_standard']
+x86-64_mac_valhalla:
+  extends: ['x86-64_mac', 'valhalla']
+x86-64_mac_vt_standard:
+  extends: ['x86-64_mac', 'valhalla_standard']
+x86-64_windows_valhalla:
+  extends: ['x86-64_windows', 'valhalla']
+x86-64_windows_vt_standard:
+  extends: ['x86-64_windows', 'valhalla_standard']
+aarch64_linux_valhalla:
+  extends: ['aarch64_linux', 'valhalla']
+aarch64_linux_vt_standard:
+  extends: ['aarch64_linux', 'valhalla_standard']
+ppc64_aix_valhalla:
+  extends: ['ppc64_aix', 'valhalla']
+ppc64_aix_vt_standard:
+  extends: ['ppc64_aix', 'valhalla_standard']
+s390x_linux_valhalla:
+  extends: ['s390x_linux', 'valhalla']
+s390x_linux_vt_standard:
+  extends: ['s390x_linux', 'valhalla_standard']
+#========================================#
+# Linux x86 64bits compiled with GCC 11
+#========================================#
+x86-64_linux_gcc11:
+  extends: ['x86-64_linux']
+  build_env:
+    cmd:
+      all: 'source /home/jenkins/set_gcc_11.2.0_env'
+    vars: 'OPENJ9_JAVA_OPTIONS=-Xdump:system+java:events=systhrow,filter=java/lang/ClassCastException,request=exclusive+prepwalk+preempt'
+#========================================#
+# Linux PPCLE 64bits compiled with GCC 11
+#========================================#
+ppc64le_linux_gcc11:
+  extends: ['ppc64le_linux']
+  build_env:
+    cmd:
+      all: 'source /home/jenkins/set_gcc_11.2.0_env'
+#========================================#
+# Linux s390x 64bits compiled with GCC 11
+#========================================#
+s390x_linux_gcc11:
+  extends: ['s390x_linux']
+  build_env:
+    cmd:
+      all: 'source /home/jenkins/set_gcc_11.2.0_env'
+#========================================#
+# Linux Aarch64 64bits compiled with GCC 11
+#========================================#
+aarch64_linux_gcc11:
+  extends: ['aarch64_linux']
+  build_env:
+    vars: 'CC=/usr/local/gcc11/bin/gcc-11.2 CXX=/usr/local/gcc11/bin/g++-11.2 LD_LIBRARY_PATH=/usr/local/gcc11/lib64:/usr/local/gcc11/lib'

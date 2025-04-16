@@ -1,0 +1,1560 @@
+/*******************************************************************************
+ * Copyright IBM Corp. and others 2020
+ *
+ * This program and the accompanying materials are made available under
+ * the terms of the Eclipse Public License 2.0 which accompanies this
+ * distribution and is available at https://www.eclipse.org/legal/epl-2.0/
+ * or the Apache License, Version 2.0 which accompanies this distribution and
+ * is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * This Source Code may also be made available under the following
+ * Secondary Licenses when the conditions for such availability set
+ * forth in the Eclipse Public License, v. 2.0 are satisfied: GNU
+ * General Public License, version 2 with the GNU Classpath
+ * Exception [1] and GNU General Public License, version 2 with the
+ * OpenJDK Assembly Exception [2].
+ *
+ * [1] https://www.gnu.org/software/classpath/license.html
+ * [2] https://openjdk.org/legal/assembly-exception.html
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0 OR GPL-2.0-only WITH OpenJDK-assembly-exception-1.0
+ *******************************************************************************/
+
+#include "il/OMROpcodes.enum"
+
+OPCODE_MACRO(\
+   /* .opcode               = */ zdload, \
+   /* .name                 = */ "zdload", \
+   /* .properties1          = */ ILProp1::LoadVar | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::ZonedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimal, \
+   /* .childProperties      = */ ILChildProp::NoChildren, \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal load */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdloadi, \
+   /* .name                 = */ "zdloadi", \
+   /* .properties1          = */ ILProp1::LoadVar | ILProp1::Indirect | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::ZonedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::Address), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    indirect zoned decimal load */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdstore, \
+   /* .name                 = */ "zdstore", \
+   /* .properties1          = */ ILProp1::Store | ILProp1::TreeTop | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeDef, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHavePaddingAddress | ILProp4::CanUseStoreAsAnAccumulator, \
+   /* .dataType             = */ TR::ZonedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::ZonedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal store */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdstorei, \
+   /* .name                 = */ "zdstorei", \
+   /* .properties1          = */ ILProp1::Store | ILProp1::Indirect | ILProp1::TreeTop | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeDef, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHavePaddingAddress | ILProp4::CanUseStoreAsAnAccumulator, \
+   /* .dataType             = */ TR::ZonedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimal, \
+   /* .childProperties      = */ TWO_CHILD(TR::Address, TR::ZonedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    indirect zoned decimal store */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pd2zd, \
+   /* .name                 = */ "pd2zd", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint | ILProp4::CanHavePaddingAddress, \
+   /* .dataType             = */ TR::ZonedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal to zoned decimal (UNPK) */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zd2pd, \
+   /* .name                 = */ "zd2pd", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::ZonedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal to packed decimal (PACK) */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdsleLoad, \
+   /* .name                 = */ "zdsleLoad", \
+   /* .properties1          = */ ILProp1::LoadVar | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::ZonedDecimalSignLeadingEmbedded, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimalSignLeadingEmbedded, \
+   /* .childProperties      = */ ILChildProp::NoChildren, \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal sign leading embedded load */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdslsLoad, \
+   /* .name                 = */ "zdslsLoad", \
+   /* .properties1          = */ ILProp1::LoadVar | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::ZonedDecimalSignLeadingSeparate, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimalSignLeadingSeparate, \
+   /* .childProperties      = */ ILChildProp::NoChildren, \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal sign leading separate load */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdstsLoad, \
+   /* .name                 = */ "zdstsLoad", \
+   /* .properties1          = */ ILProp1::LoadVar | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::ZonedDecimalSignTrailingSeparate, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimalSignTrailingSeparate, \
+   /* .childProperties      = */ ILChildProp::NoChildren, \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal sign leading separate load */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdsleLoadi, \
+   /* .name                 = */ "zdsleLoadi", \
+   /* .properties1          = */ ILProp1::LoadVar | ILProp1::Indirect | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::ZonedDecimalSignLeadingEmbedded, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimalSignLeadingEmbedded, \
+   /* .childProperties      = */ ONE_CHILD(TR::Address), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    indirect zoned decimal sign leading embedded load */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdslsLoadi, \
+   /* .name                 = */ "zdslsLoadi", \
+   /* .properties1          = */ ILProp1::LoadVar | ILProp1::Indirect | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::ZonedDecimalSignLeadingSeparate, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimalSignLeadingSeparate, \
+   /* .childProperties      = */ ONE_CHILD(TR::Address), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    indirect zoned decimal sign leading separate load */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdstsLoadi, \
+   /* .name                 = */ "zdstsLoadi", \
+   /* .properties1          = */ ILProp1::LoadVar | ILProp1::Indirect | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::ZonedDecimalSignTrailingSeparate, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimalSignTrailingSeparate, \
+   /* .childProperties      = */ ONE_CHILD(TR::Address), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    indirect zoned decimal sign trailing separate load */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdsleStore, \
+   /* .name                 = */ "zdsleStore", \
+   /* .properties1          = */ ILProp1::Store | ILProp1::TreeTop | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeDef, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHavePaddingAddress | ILProp4::CanUseStoreAsAnAccumulator, \
+   /* .dataType             = */ TR::ZonedDecimalSignLeadingEmbedded, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimalSignLeadingEmbedded, \
+   /* .childProperties      = */ ONE_CHILD(TR::ZonedDecimalSignLeadingEmbedded), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal sign leading embedded store */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdslsStore, \
+   /* .name                 = */ "zdslsStore", \
+   /* .properties1          = */ ILProp1::Store | ILProp1::TreeTop | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeDef, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanUseStoreAsAnAccumulator, \
+   /* .dataType             = */ TR::ZonedDecimalSignLeadingSeparate, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimalSignLeadingSeparate, \
+   /* .childProperties      = */ ONE_CHILD(TR::ZonedDecimalSignLeadingSeparate), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal sign leading separate store */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdstsStore, \
+   /* .name                 = */ "zdstsStore", \
+   /* .properties1          = */ ILProp1::Store | ILProp1::TreeTop | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeDef, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanUseStoreAsAnAccumulator, \
+   /* .dataType             = */ TR::ZonedDecimalSignTrailingSeparate, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimalSignTrailingSeparate, \
+   /* .childProperties      = */ ONE_CHILD(TR::ZonedDecimalSignTrailingSeparate), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal sign trailing separate store */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdsleStorei, \
+   /* .name                 = */ "zdsleStorei", \
+   /* .properties1          = */ ILProp1::Store | ILProp1::Indirect | ILProp1::TreeTop | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeDef, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHavePaddingAddress | ILProp4::CanUseStoreAsAnAccumulator, \
+   /* .dataType             = */ TR::ZonedDecimalSignLeadingEmbedded, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimalSignLeadingEmbedded, \
+   /* .childProperties      = */ TWO_CHILD(TR::Address, TR::ZonedDecimalSignLeadingEmbedded), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    indirect zoned decimal sign leading embedded store */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdslsStorei, \
+   /* .name                 = */ "zdslsStorei", \
+   /* .properties1          = */ ILProp1::Store | ILProp1::Indirect | ILProp1::TreeTop | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeDef, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanUseStoreAsAnAccumulator, \
+   /* .dataType             = */ TR::ZonedDecimalSignLeadingSeparate, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimalSignLeadingSeparate, \
+   /* .childProperties      = */ TWO_CHILD(TR::Address, TR::ZonedDecimalSignLeadingSeparate), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    indirect zoned decimal sign leading separate store */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdstsStorei, \
+   /* .name                 = */ "zdstsStorei", \
+   /* .properties1          = */ ILProp1::Store | ILProp1::Indirect | ILProp1::TreeTop | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeDef, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanUseStoreAsAnAccumulator, \
+   /* .dataType             = */ TR::ZonedDecimalSignTrailingSeparate, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimalSignTrailingSeparate, \
+   /* .childProperties      = */ TWO_CHILD(TR::Address, TR::ZonedDecimalSignTrailingSeparate), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    indirect zoned decimal sign trailing separate store */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zd2zdsle, \
+   /* .name                 = */ "zd2zdsle", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::ZonedDecimalSignLeadingEmbedded, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimalSignLeadingEmbedded, \
+   /* .childProperties      = */ ONE_CHILD(TR::ZonedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal to zoned decimal sign leading embedded */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zd2zdsls, \
+   /* .name                 = */ "zd2zdsls", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::ZonedDecimalSignLeadingSeparate, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimalSignLeadingSeparate, \
+   /* .childProperties      = */ ONE_CHILD(TR::ZonedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal to zoned decimal sign leading separate */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zd2zdsts, \
+   /* .name                 = */ "zd2zdsts", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::ZonedDecimalSignTrailingSeparate, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimalSignTrailingSeparate, \
+   /* .childProperties      = */ ONE_CHILD(TR::ZonedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal to zoned decimal sign trailing separate */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdsle2pd, \
+   /* .name                 = */ "zdsle2pd", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::ZonedDecimalSignLeadingEmbedded), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal sign leading embedded to packed decimal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdsls2pd, \
+   /* .name                 = */ "zdsls2pd", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::ZonedDecimalSignLeadingSeparate), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal sign leading separate to packed decimal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdsts2pd, \
+   /* .name                 = */ "zdsts2pd", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::ZonedDecimalSignTrailingSeparate), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal sign trailing separate to packed decimal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdsle2zd, \
+   /* .name                 = */ "zdsle2zd", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::ZonedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::ZonedDecimalSignLeadingEmbedded), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal sign leading embedded to zoned decimal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdsls2zd, \
+   /* .name                 = */ "zdsls2zd", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::ZonedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::ZonedDecimalSignLeadingSeparate), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal sign leading separate to zoned decimal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdsts2zd, \
+   /* .name                 = */ "zdsts2zd", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::ZonedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::ZonedDecimalSignTrailingSeparate), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal sign trailing separate to zoned decimal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pd2zdsls, \
+   /* .name                 = */ "pd2zdsls", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::ZonedDecimalSignLeadingSeparate, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimalSignLeadingSeparate, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal to zoned decimal sign leading separate */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pd2zdslsSetSign, \
+   /* .name                 = */ "pd2zdslsSetSign", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::SetSign | ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::ZonedDecimalSignLeadingSeparate, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal to zoned decimal sign leading separate with forced sign code setting */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pd2zdsts, \
+   /* .name                 = */ "pd2zdsts", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::ZonedDecimalSignTrailingSeparate, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal to zoned decimal sign trailing separate */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pd2zdstsSetSign, \
+   /* .name                 = */ "pd2zdstsSetSign", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::SetSign | ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::ZonedDecimalSignTrailingSeparate, \
+   /* .typeProperties       = */ ILTypeProp::ZonedDecimalSignTrailingSeparate, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal to zoned decimal sign trailing separate with forced sign code setting */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ udLoad, \
+   /* .name                 = */ "udLoad", \
+   /* .properties1          = */ ILProp1::LoadVar | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::UnicodeDecimal, \
+   /* .typeProperties       = */ ILTypeProp::UnicodeDecimal, \
+   /* .childProperties      = */ ILChildProp::NoChildren, \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    unicode decimal load */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ udslLoad, \
+   /* .name                 = */ "udslLoad", \
+   /* .properties1          = */ ILProp1::LoadVar | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::UnicodeDecimalSignLeading, \
+   /* .typeProperties       = */ ILTypeProp::UnicodeDecimalSignLeading, \
+   /* .childProperties      = */ ILChildProp::NoChildren, \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    unicode decimal sign leading load */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ udstLoad, \
+   /* .name                 = */ "udstLoad", \
+   /* .properties1          = */ ILProp1::LoadVar | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::UnicodeDecimalSignTrailing, \
+   /* .typeProperties       = */ ILTypeProp::UnicodeDecimalSignTrailing, \
+   /* .childProperties      = */ ILChildProp::NoChildren, \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    unicode decimal sign trailing load */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ udLoadi, \
+   /* .name                 = */ "udLoadi", \
+   /* .properties1          = */ ILProp1::LoadVar | ILProp1::Indirect | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::UnicodeDecimal, \
+   /* .typeProperties       = */ ILTypeProp::UnicodeDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::Address), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    indirect unicode decimal load */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ udslLoadi, \
+   /* .name                 = */ "udslLoadi", \
+   /* .properties1          = */ ILProp1::LoadVar | ILProp1::Indirect | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::UnicodeDecimalSignLeading, \
+   /* .typeProperties       = */ ILTypeProp::UnicodeDecimalSignLeading, \
+   /* .childProperties      = */ ONE_CHILD(TR::Address), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    indirect unicode decimal sign leading load */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ udstLoadi, \
+   /* .name                 = */ "udstLoadi", \
+   /* .properties1          = */ ILProp1::LoadVar | ILProp1::Indirect | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::UnicodeDecimalSignTrailing, \
+   /* .typeProperties       = */ ILTypeProp::UnicodeDecimalSignTrailing, \
+   /* .childProperties      = */ ONE_CHILD(TR::Address), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    indirect unicode decimal sign trailing load */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ udStore, \
+   /* .name                 = */ "udStore", \
+   /* .properties1          = */ ILProp1::Store | ILProp1::TreeTop | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeDef, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHavePaddingAddress | ILProp4::CanUseStoreAsAnAccumulator, \
+   /* .dataType             = */ TR::UnicodeDecimal, \
+   /* .typeProperties       = */ ILTypeProp::UnicodeDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::UnicodeDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    unicode decimal store */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ udslStore, \
+   /* .name                 = */ "udslStore", \
+   /* .properties1          = */ ILProp1::Store | ILProp1::TreeTop | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeDef, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanUseStoreAsAnAccumulator, \
+   /* .dataType             = */ TR::UnicodeDecimalSignLeading, \
+   /* .typeProperties       = */ ILTypeProp::UnicodeDecimalSignLeading, \
+   /* .childProperties      = */ ONE_CHILD(TR::UnicodeDecimalSignLeading), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    unicode decimal sign leading store */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ udstStore, \
+   /* .name                 = */ "udstStore", \
+   /* .properties1          = */ ILProp1::Store | ILProp1::TreeTop | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeDef, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanUseStoreAsAnAccumulator, \
+   /* .dataType             = */ TR::UnicodeDecimalSignTrailing, \
+   /* .typeProperties       = */ ILTypeProp::UnicodeDecimalSignTrailing, \
+   /* .childProperties      = */ ONE_CHILD(TR::UnicodeDecimalSignTrailing), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    unicode decimal sign trailing store */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ udStorei, \
+   /* .name                 = */ "udStorei", \
+   /* .properties1          = */ ILProp1::Store | ILProp1::Indirect | ILProp1::TreeTop | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeDef, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHavePaddingAddress | ILProp4::CanUseStoreAsAnAccumulator, \
+   /* .dataType             = */ TR::UnicodeDecimal, \
+   /* .typeProperties       = */ ILTypeProp::UnicodeDecimal, \
+   /* .childProperties      = */ TWO_CHILD(TR::Address, TR::UnicodeDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    indirect unicode decimal store */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ udslStorei, \
+   /* .name                 = */ "udslStorei", \
+   /* .properties1          = */ ILProp1::Store | ILProp1::Indirect | ILProp1::TreeTop | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeDef, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanUseStoreAsAnAccumulator, \
+   /* .dataType             = */ TR::UnicodeDecimalSignLeading, \
+   /* .typeProperties       = */ ILTypeProp::UnicodeDecimalSignLeading, \
+   /* .childProperties      = */ TWO_CHILD(TR::Address, TR::UnicodeDecimalSignLeading), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    indirect unicode decimal sign leading store */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ udstStorei, \
+   /* .name                 = */ "udstStorei", \
+   /* .properties1          = */ ILProp1::Store | ILProp1::Indirect | ILProp1::TreeTop | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeDef, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanUseStoreAsAnAccumulator, \
+   /* .dataType             = */ TR::UnicodeDecimalSignTrailing, \
+   /* .typeProperties       = */ ILTypeProp::UnicodeDecimalSignTrailing, \
+   /* .childProperties      = */ TWO_CHILD(TR::Address, TR::UnicodeDecimalSignTrailing), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    indirect unicode decimal sign trailing store */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pd2ud, \
+   /* .name                 = */ "pd2ud", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::UnicodeDecimal, \
+   /* .typeProperties       = */ ILTypeProp::UnicodeDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal to unicode decimal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pd2udsl, \
+   /* .name                 = */ "pd2udsl", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::UnicodeDecimalSignLeading, \
+   /* .typeProperties       = */ ILTypeProp::UnicodeDecimalSignLeading, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal to unicode decimal sign leading */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pd2udst, \
+   /* .name                 = */ "pd2udst", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::UnicodeDecimalSignTrailing, \
+   /* .typeProperties       = */ ILTypeProp::UnicodeDecimalSignTrailing, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal to unicode decimal sign trailing */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ udsl2ud, \
+   /* .name                 = */ "udsl2ud", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::UnicodeDecimal, \
+   /* .typeProperties       = */ ILTypeProp::UnicodeDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::UnicodeDecimalSignLeading), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    unicode decimal sign leading to unicode decimal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ udst2ud, \
+   /* .name                 = */ "udst2ud", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::UnicodeDecimal, \
+   /* .typeProperties       = */ ILTypeProp::UnicodeDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::UnicodeDecimalSignTrailing), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    unicode decimal sign trailing to unicode decimal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ ud2pd, \
+   /* .name                 = */ "ud2pd", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::UnicodeDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    unicode decimal to packed decimal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ udsl2pd, \
+   /* .name                 = */ "udsl2pd", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::UnicodeDecimalSignLeading), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    unicode decimal sign leading to packed decimal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ udst2pd, \
+   /* .name                 = */ "udst2pd", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::UnicodeDecimalSignTrailing), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    unicode decimal sign trailing to packed decimal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdload, \
+   /* .name                 = */ "pdload", \
+   /* .properties1          = */ ILProp1::LoadVar | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ILChildProp::NoChildren, \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal load */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdloadi, \
+   /* .name                 = */ "pdloadi", \
+   /* .properties1          = */ ILProp1::LoadVar | ILProp1::Indirect | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::Address), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    indirect packed decimal load */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdstore, \
+   /* .name                 = */ "pdstore", \
+   /* .properties1          = */ ILProp1::Store | ILProp1::TreeTop | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeDef, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanUseStoreAsAnAccumulator, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal store */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdstorei, \
+   /* .name                 = */ "pdstorei", \
+   /* .properties1          = */ ILProp1::Store | ILProp1::Indirect | ILProp1::TreeTop | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeDef, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanUseStoreAsAnAccumulator, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ TWO_CHILD(TR::Address, TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    indirect packed decimal store */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdadd, \
+   /* .name                 = */ "pdadd", \
+   /* .properties1          = */ ILProp1::Commutative | ILProp1::Associative | ILProp1::Add, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ TWO_SAME_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::pdadd, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal add */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdsub, \
+   /* .name                 = */ "pdsub", \
+   /* .properties1          = */ ILProp1::Sub, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ TWO_SAME_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal subtract */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdmul, \
+   /* .name                 = */ "pdmul", \
+   /* .properties1          = */ ILProp1::Commutative | ILProp1::Associative | ILProp1::Mul, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ TWO_SAME_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::pdmul, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal multiply */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pddiv, \
+   /* .name                 = */ "pddiv", \
+   /* .properties1          = */ ILProp1::Div, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ TWO_SAME_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal divide */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdrem, \
+   /* .name                 = */ "pdrem", \
+   /* .properties1          = */ ILProp1::Rem, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ TWO_SAME_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal remainder */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdneg, \
+   /* .name                 = */ "pdneg", \
+   /* .properties1          = */ ILProp1::Neg, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal negation */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdabs, \
+   /* .name                 = */ "pdabs", \
+   /* .properties1          = */ 0, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ ILProp3::Abs, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal absolute value */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdshr, \
+   /* .name                 = */ "pdshr", \
+   /* .properties1          = */ ILProp1::RightShift, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ TWO_SAME_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal shift right */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdshl, \
+   /* .name                 = */ "pdshl", \
+   /* .properties1          = */ ILProp1::LeftShift, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ TWO_SAME_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal shift left */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdshrSetSign, \
+   /* .name                 = */ "pdshrSetSign", \
+   /* .properties1          = */ ILProp1::RightShift, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::SetSign | ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ TWO_SAME_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal shift right and set the sign code */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdshlSetSign, \
+   /* .name                 = */ "pdshlSetSign", \
+   /* .properties1          = */ ILProp1::LeftShift, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::SetSign | ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ TWO_SAME_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal shift left and set the sign code */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdshlOverflow, \
+   /* .name                 = */ "pdshlOverflow", \
+   /* .properties1          = */ ILProp1::LeftShift, \
+   /* .properties2          = */ ILProp2::ValueNumberShare, \
+   /* .properties3          = */ ILProp3::LikeUse, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ TWO_SAME_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal shift left with overflow detection */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdchk, \
+   /* .name                 = */ "pdchk", \
+   /* .properties1          = */ 0, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::Int32, \
+   /* .typeProperties       = */ ILTypeProp::Size_4 | ILTypeProp::Integer, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal validity checking */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pd2i, \
+   /* .name                 = */ "pd2i", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::Int32, \
+   /* .typeProperties       = */ ILTypeProp::Size_4 | ILTypeProp::Integer, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal to signed integer (SINT32) */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pd2iOverflow, \
+   /* .name                 = */ "pd2iOverflow", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::Int32, \
+   /* .typeProperties       = */ ILTypeProp::Size_4 | ILTypeProp::Integer, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal to signed integer with overflow on (SINT32) */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pd2iu, \
+   /* .name                 = */ "pd2iu", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::Int32, \
+   /* .typeProperties       = */ ILTypeProp::Size_4 | ILTypeProp::Unsigned, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal to unsigned integer (UINT32) */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ i2pd, \
+   /* .name                 = */ "i2pd", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::Int32), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    signed integer (SINT32) to packed decimal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ iu2pd, \
+   /* .name                 = */ "iu2pd", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::Int32), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    unsigned integer (UINT32) to packed decimal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pd2l, \
+   /* .name                 = */ "pd2l", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::Int64, \
+   /* .typeProperties       = */ ILTypeProp::Size_8 | ILTypeProp::Integer, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal to signed long (SINT64) */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pd2lOverflow, \
+   /* .name                 = */ "pd2lOverflow", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::Int64, \
+   /* .typeProperties       = */ ILTypeProp::Size_8 | ILTypeProp::Integer, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal to signed integer with overflow on (SINT64) */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pd2lu, \
+   /* .name                 = */ "pd2lu", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::Int64, \
+   /* .typeProperties       = */ ILTypeProp::Size_8 | ILTypeProp::Unsigned, \
+   /* .childProperties      = */ ONE_CHILD(TR::Int64), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal to unsigned long (UINT64) */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ l2pd, \
+   /* .name                 = */ "l2pd", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::Int64), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    signed long (SINT64) to packed decimal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ lu2pd, \
+   /* .name                 = */ "lu2pd", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::Int64), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    unsigned long (UINT64) to packed decimal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pd2f, \
+   /* .name                 = */ "pd2f", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::ConversionHasFraction, \
+   /* .dataType             = */ TR::Float, \
+   /* .typeProperties       = */ ILTypeProp::Size_4 | ILTypeProp::Floating_Point, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal to float */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pd2d, \
+   /* .name                 = */ "pd2d", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::ConversionHasFraction, \
+   /* .dataType             = */ TR::Double, \
+   /* .typeProperties       = */ ILTypeProp::Size_8 | ILTypeProp::Floating_Point, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal to double */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ f2pd, \
+   /* .name                 = */ "f2pd", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::ConversionHasFraction | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::Float), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    float to packed decimal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ d2pd, \
+   /* .name                 = */ "d2pd", \
+   /* .properties1          = */ ILProp1::Conversion, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::ConversionHasFraction | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::Double), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    double to packed decimal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdcmpeq, \
+   /* .name                 = */ "pdcmpeq", \
+   /* .properties1          = */ ILProp1::BooleanCompare, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ ILProp3::CompareTrueIfEqual, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::Int32, \
+   /* .typeProperties       = */ ILTypeProp::Size_4 | ILTypeProp::Integer, \
+   /* .childProperties      = */ TWO_SAME_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::pdcmpeq, \
+   /* .reverseBranchOpCode  = */ TR::pdcmpne, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal compare if equal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdcmpne, \
+   /* .name                 = */ "pdcmpne", \
+   /* .properties1          = */ ILProp1::BooleanCompare, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ ILProp3::CompareTrueIfLess | ILProp3::CompareTrueIfGreater, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::Int32, \
+   /* .typeProperties       = */ ILTypeProp::Size_4 | ILTypeProp::Integer, \
+   /* .childProperties      = */ TWO_SAME_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::pdcmpne, \
+   /* .reverseBranchOpCode  = */ TR::pdcmpeq, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal compare if not equal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdcmplt, \
+   /* .name                 = */ "pdcmplt", \
+   /* .properties1          = */ ILProp1::BooleanCompare, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ ILProp3::CompareTrueIfLess, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::Int32, \
+   /* .typeProperties       = */ ILTypeProp::Size_4 | ILTypeProp::Integer, \
+   /* .childProperties      = */ TWO_SAME_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::pdcmpgt, \
+   /* .reverseBranchOpCode  = */ TR::pdcmpge, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal compare if less than */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdcmpge, \
+   /* .name                 = */ "pdcmpge", \
+   /* .properties1          = */ ILProp1::BooleanCompare, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ ILProp3::CompareTrueIfGreater | ILProp3::CompareTrueIfEqual, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::Int32, \
+   /* .typeProperties       = */ ILTypeProp::Size_4 | ILTypeProp::Integer, \
+   /* .childProperties      = */ TWO_SAME_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::pdcmple, \
+   /* .reverseBranchOpCode  = */ TR::pdcmplt, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal compare if greater than or equal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdcmpgt, \
+   /* .name                 = */ "pdcmpgt", \
+   /* .properties1          = */ ILProp1::BooleanCompare, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ ILProp3::CompareTrueIfGreater, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::Int32, \
+   /* .typeProperties       = */ ILTypeProp::Size_4 | ILTypeProp::Integer, \
+   /* .childProperties      = */ TWO_SAME_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::pdcmplt, \
+   /* .reverseBranchOpCode  = */ TR::pdcmple, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal compare if greater than */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdcmple, \
+   /* .name                 = */ "pdcmple", \
+   /* .properties1          = */ ILProp1::BooleanCompare, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ ILProp3::CompareTrueIfLess | ILProp3::CompareTrueIfEqual, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::Int32, \
+   /* .typeProperties       = */ ILTypeProp::Size_4 | ILTypeProp::Integer, \
+   /* .childProperties      = */ TWO_SAME_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::pdcmpge, \
+   /* .reverseBranchOpCode  = */ TR::pdcmpgt, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal compare if less than or equal */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdclean, \
+   /* .name                 = */ "pdclean", \
+   /* .properties1          = */ 0, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    set the sign code to the preferred sign code and force 0 to the positive sign code */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdclear, \
+   /* .name                 = */ "pdclear", \
+   /* .properties1          = */ 0, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ ILProp3::SkipDynamicLitPoolOnInts, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    clear the specified range of packed decimal digits */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdclearSetSign, \
+   /* .name                 = */ "pdclearSetSign", \
+   /* .properties1          = */ 0, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ ILProp3::SkipDynamicLitPoolOnInts, \
+   /* .properties4          = */ ILProp4::SetSignOnNode | ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    clear the specified range of packed decimal digits and set the sign to the specified value */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdSetSign, \
+   /* .name                 = */ "pdSetSign", \
+   /* .properties1          = */ 0, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::SetSign | ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal forced sign code setting */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ pdModifyPrecision, \
+   /* .name                 = */ "pdModifyPrecision", \
+   /* .properties1          = */ 0, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::ModifyPrecision | ILProp4::BinaryCodedDecimalOp | ILProp4::CanHaveStorageReferenceHint, \
+   /* .dataType             = */ TR::PackedDecimal, \
+   /* .typeProperties       = */ ILTypeProp::PackedDecimal, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    packed decimal modify precision */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ countDigits, \
+   /* .name                 = */ "countDigits", \
+   /* .properties1          = */ 0, \
+   /* .properties2          = */ 0, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ 0, \
+   /* .dataType             = */ TR::Int32, \
+   /* .typeProperties       = */ ILTypeProp::Size_4 | ILTypeProp::Integer, \
+   /* .childProperties      = */ ONE_CHILD(TR::PackedDecimal), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    Inline code for counting digits of an integer/long value */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ BCDCHK, \
+   /* .name                 = */ "BCDCHK", \
+   /* .properties1          = */ ILProp1::TreeTop | ILProp1::HasSymbolRef, \
+   /* .properties2          = */ ILProp2::CanRaiseException | ILProp2::Check | ILProp2::MayUseSystemStack, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ 0, \
+   /* .dataType             = */ TR::NoType, \
+   /* .typeProperties       = */ 0, \
+   /* .childProperties      = */ ILChildProp::Unspecified, \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          = */ \
+)
+OPCODE_MACRO(\
+   /* .opcode               = */ zdchk, \
+   /* .name                 = */ "zdchk", \
+   /* .properties1          = */ 0, \
+   /* .properties2          = */ ILProp2::ValueNumberShare | ILProp2::SupportedForPRE, \
+   /* .properties3          = */ 0, \
+   /* .properties4          = */ ILProp4::BinaryCodedDecimalOp, \
+   /* .dataType             = */ TR::Int32, \
+   /* .typeProperties       = */ ILTypeProp::Size_4 | ILTypeProp::Integer, \
+   /* .childProperties      = */ TWO_CHILD(TR::ZonedDecimal, TR::Int8), \
+   /* .swapChildrenOpCode   = */ TR::BadILOp, \
+   /* .reverseBranchOpCode  = */ TR::BadILOp, \
+   /* .booleanCompareOpCode = */ TR::BadILOp, \
+   /* .ifCompareOpCode      = */ TR::BadILOp, \
+   /* .description          =    zoned decimal validity checking */ \
+)
